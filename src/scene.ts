@@ -430,7 +430,7 @@ export function createScene(
     ridge.rotation.z = PI / 2;
     [-1, 1].forEach(s => Box(roofL, 0.05, 0.02, mat.wood, 0, wallTop - 0.02, s * (roofHalf - 0.01), coop));
 
-    // Roof windows — FIX BUG #1: dh=0.28 (tengah slope), glass lebih visible, depthWrite:false
+    // Roof windows — FIX OVERLAP: servo statis terpisah, frame di bawah pivot
     const rw = 0.4, rh = 0.28, dh = 0.28;
     const roofGlassMat = new THREE.MeshPhysicalMaterial({
       color: 0xc8e8f0,
@@ -444,24 +444,60 @@ export function createScene(
       depthWrite: false,
     });
     [-0.6, 0.6].forEach((x, i) => {
+      // ====== 1. SERVO STATIS (nempel di atap, tidak ikut buka) ======
+      const servoGroup = new THREE.Group();
+      const baseY = wallTop + RH - dh * Math.sin(roofAngle);
+      const baseZ = dh * Math.cos(roofAngle);
+
+      // pivot servo sedikit di luar + ke samping
+      servoGroup.position.set(
+        x + rw / 2 + 0.09,
+        baseY + 0.035,          // angkat servo sedikit
+        baseZ - 0.02            // mundur sedikit dari sisi kaca
+      );
+      servoGroup.rotation.x = -tilt;
+
+      // body servo
+      Box(0.04, 0.05, 0.03, mat.servo, 0, 0, 0, servoGroup);
+      // bracket besi
+      Box(0.05, 0.06, 0.01, mat.iron, 0, -0.005, -0.02, servoGroup);
+      // kabel jumper ke bawah
+      Cyl(0.004, 0.004, 0.12, 6, mat.wireRed, 0.015, -0.04, 0, servoGroup).rotation.z = 0.2;
+      Cyl(0.004, 0.004, 0.12, 6, mat.wireYellow, 0, -0.04, 0, servoGroup).rotation.z = 0.1;
+      Cyl(0.004, 0.004, 0.12, 6, mat.wireBlack, -0.015, -0.04, 0, servoGroup).rotation.z = 0;
+      coop.add(servoGroup);
+
+      // ====== 2. GRUP JENDELA BERGERAK (hanya kaca + frame) ======
       const g = new THREE.Group();
       g.name = 'roof_win_' + (i + 1);
-      const pane = meshHelper(new THREE.BoxGeometry(rw, rh, 0.008), roofGlassMat, 0, -rh / 2, 0, g);
-      pane.renderOrder = 10;
-      Box(rw + 0.06, 0.03, 0.02, mat.wood, 0, 0.015, 0, g);
-      Box(rw + 0.06, 0.03, 0.02, mat.wood, 0, -rh - 0.015, 0, g);
-      [-1, 1].forEach(s => Box(0.03, rh, 0.02, mat.wood, s * (rw / 2 + 0.015), -rh / 2, 0, g));
-      // Hinges
-      [-1, 1].forEach(q => Cyl(0.008, 0.008, 0.04, 6, mat.iron, q * (rw / 2 - 0.05), 0.005, 0, g).rotation.z = PI / 2);
-      // Servo
-      Box(0.03, 0.04, 0.03, mat.servo, rw / 2 + 0.07, -rh / 2, 0.02, g);
-      Box(0.04, 0.05, 0.01, mat.iron, rw / 2 + 0.07, -rh / 2, 0.005, g);
+
+      // offset keluar dari permukaan atap biar frame tidak tembus
+      const OUT = 0.022;  // jarak aman dari permukaan atap
+
       g.position.set(
         x,
-        wallTop + RH - dh * Math.sin(roofAngle) + 0.025,
-        dh * Math.cos(roofAngle) + 0.015
+        wallTop + RH - dh * Math.sin(roofAngle) + OUT * Math.cos(roofAngle),
+        dh * Math.cos(roofAngle) + OUT * Math.sin(roofAngle)
       );
       g.rotation.x = -tilt;
+
+      // kaca
+      const pane = meshHelper(new THREE.BoxGeometry(rw, rh, 0.008), roofGlassMat, 0, -rh / 2, 0, g);
+      pane.renderOrder = 10;
+
+      // frame (semua di BAWAH pivot / y ≤ 0 biar tidak tembus atap)
+      Box(rw + 0.06, 0.03, 0.02, mat.wood, 0, -0.015, 0, g);            // frame atas
+      Box(rw + 0.06, 0.03, 0.02, mat.wood, 0, -rh - 0.015, 0, g);        // frame bawah
+      [-1, 1].forEach(s =>
+        Box(0.03, rh, 0.02, mat.wood, s * (rw / 2 + 0.015), -rh / 2, 0, g)   // frame samping
+      );
+
+      // engsel (di tepi atas, di bawah pivot biar tidak tembus atap)
+      [-1, 1].forEach(s => {
+        Cyl(0.008, 0.008, 0.04, 6, mat.iron, s * (rw / 2 - 0.05), -0.005, 0.01, g)
+          .rotation.z = PI / 2;
+      });
+
       coop.add(g);
       animatables.roofWindows.push({ mesh: g, baseAngle: -tilt });
     });
