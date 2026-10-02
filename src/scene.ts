@@ -219,24 +219,53 @@ export function createScene(
     }
   }, rx, ry);
 
+  // FIX BUG #3: Belt texture dengan pola lebih kontras & panah directional
   const beltTex = () => createTex(512, 512, (x, w, h) => {
-    x.fillStyle = '#0a0a0a';
+    // Base hitam
+    x.fillStyle = '#1a1a1a';
     x.fillRect(0, 0, w, h);
-    for (let i = 0; i < 1500; i++) {
-      x.fillStyle = `rgba(40,40,40,${rr(0, 0.3)})`;
+    // Grain karet lebih kontras
+    for (let i = 0; i < 2000; i++) {
+      x.fillStyle = `rgba(90,90,90,${rr(0, 0.5)})`;
       x.beginPath(); x.arc(R() * w, R() * h, 1, 0, 2 * PI); x.fill();
     }
-    for (let i = 0; i < 15; i++) {
-      const px = R() * w, py = R() * h, r = rr(6, 14);
-      x.fillStyle = `rgba(100,65,30,${rr(0.6, 0.9)})`;
-      x.beginPath(); x.ellipse(px, py, r, r * 0.6, R() * PI, 0, 2 * PI); x.fill();
-    }
-    x.strokeStyle = 'rgba(0,0,0,.4)';
+    // Garis transverse yang jelas (setiap 32px)
+    x.strokeStyle = 'rgba(60,60,60,0.8)';
     x.lineWidth = 2;
-    for (let i = 0; i < w; i += 20) {
+    for (let i = 0; i < w; i += 32) {
       x.beginPath(); x.moveTo(i, 0); x.lineTo(i, h); x.stroke();
     }
-  }, 10, 3);
+    // Panah directional untuk indikasi arah
+    for (let i = 0; i < w; i += 128) {
+      for (let j = 0; j < h; j += 128) {
+        x.fillStyle = 'rgba(40,40,40,0.9)';
+        x.beginPath();
+        x.moveTo(i + 20, j + 64);
+        x.lineTo(i + 60, j + 32);
+        x.lineTo(i + 60, j + 96);
+        x.closePath();
+        x.fill();
+      }
+    }
+    // Kotoran tersebar
+    for (let i = 0; i < 25; i++) {
+      const px = R() * w, py = R() * h, r = rr(8, 18);
+      x.fillStyle = `rgba(110,70,30,${rr(0.6, 0.95)})`;
+      x.beginPath(); x.ellipse(px, py, r, r * 0.6, R() * PI, 0, 2 * PI); x.fill();
+    }
+  }, 8, 2);
+
+  // FIX BUG #3: Roller texture dengan garis supaya rotasi kelihatan
+  const rollerTex = () => createTex(64, 64, (x, w, h) => {
+    x.fillStyle = '#8b5a2b';
+    x.fillRect(0, 0, w, h);
+    // Garis memanjang
+    for (let i = 0; i < w; i += 8) {
+      x.strokeStyle = 'rgba(60,30,15,0.6)';
+      x.lineWidth = 1;
+      x.beginPath(); x.moveTo(i, 0); x.lineTo(i, h); x.stroke();
+    }
+  }, 2, 1);
 
   // Materials
   const S = (c: number, m: number, r: number, o: any = {}) =>
@@ -270,7 +299,7 @@ export function createScene(
     feederYellow: S(0xfbbf24, 0.3, 0.4),
     feederRed: S(0xdc2626, 0.3, 0.4),
     conveyorBelt: S(0xffffff, 0.1, 0.9, { map: beltTex() }),
-    rollerWood: S(0x8b5a2b, 0, 0.85),
+    rollerWood: S(0xffffff, 0, 0.85, { map: rollerTex() }),
     board: S(0x0a0a0a, 0.3, 0.5),
     white: S(0xf0f0f0, 0.1, 0.6),
   };
@@ -401,12 +430,24 @@ export function createScene(
     ridge.rotation.z = PI / 2;
     [-1, 1].forEach(s => Box(roofL, 0.05, 0.02, mat.wood, 0, wallTop - 0.02, s * (roofHalf - 0.01), coop));
 
-    // Roof windows
-    const rw = 0.4, rh = 0.28, dh = 0.1;
+    // Roof windows — FIX BUG #1: dh=0.28 (tengah slope), glass lebih visible, depthWrite:false
+    const rw = 0.4, rh = 0.28, dh = 0.28;
+    const roofGlassMat = new THREE.MeshPhysicalMaterial({
+      color: 0xc8e8f0,
+      transmission: 0.7,
+      opacity: 0.85,
+      transparent: true,
+      roughness: 0.05,
+      ior: 1.45,
+      thickness: 0.005,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
     [-0.6, 0.6].forEach((x, i) => {
       const g = new THREE.Group();
       g.name = 'roof_win_' + (i + 1);
-      meshHelper(new THREE.BoxGeometry(rw, rh, 0.01), mat.acrylic, 0, -rh / 2, 0, g);
+      const pane = meshHelper(new THREE.BoxGeometry(rw, rh, 0.008), roofGlassMat, 0, -rh / 2, 0, g);
+      pane.renderOrder = 10;
       Box(rw + 0.06, 0.03, 0.02, mat.wood, 0, 0.015, 0, g);
       Box(rw + 0.06, 0.03, 0.02, mat.wood, 0, -rh - 0.015, 0, g);
       [-1, 1].forEach(s => Box(0.03, rh, 0.02, mat.wood, s * (rw / 2 + 0.015), -rh / 2, 0, g));
@@ -415,19 +456,37 @@ export function createScene(
       // Servo
       Box(0.03, 0.04, 0.03, mat.servo, rw / 2 + 0.07, -rh / 2, 0.02, g);
       Box(0.04, 0.05, 0.01, mat.iron, rw / 2 + 0.07, -rh / 2, 0.005, g);
-      g.position.set(x, wallTop + RH - dh * Math.sin(roofAngle) + 0.012, dh * Math.cos(roofAngle));
+      g.position.set(
+        x,
+        wallTop + RH - dh * Math.sin(roofAngle) + 0.025,
+        dh * Math.cos(roofAngle) + 0.015
+      );
       g.rotation.x = -tilt;
       coop.add(g);
       animatables.roofWindows.push({ mesh: g, baseAngle: -tilt });
     });
 
-    // Side window (front)
+    // Side window (front) — FIX BUG #2: glass lebih visible, depthWrite:false
     const winW = 0.4, winH = 0.32, wy = PH + 0.3, wx = 0.45;
     const win = new THREE.Group();
     win.name = 'side_win';
     win.position.set(wx, wy, halfD + 0.01);
     coop.add(win);
-    meshHelper(new THREE.BoxGeometry(winW, winH, 0.01), mat.acrylic, winW / 2, 0, 0, win);
+    const sideGlassMat = new THREE.MeshPhysicalMaterial({
+      color: 0xc8e8f0,
+      transmission: 0.75,
+      opacity: 0.9,
+      transparent: true,
+      roughness: 0.05,
+      ior: 1.45,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const sidePane = meshHelper(new THREE.BoxGeometry(winW, winH, 0.008), sideGlassMat, winW / 2, 0, 0, win);
+    sidePane.renderOrder = 10;
+    // Frame kaca tipis di sekeliling
+    Box(winW + 0.02, 0.015, 0.012, mat.wood, winW / 2, winH / 2, 0.005, win);
+    Box(winW + 0.02, 0.015, 0.012, mat.wood, winW / 2, -winH / 2, 0.005, win);
     [-1, 1].forEach(s => Box(winW + 0.04, 0.03, 0.025, mat.wood, winW / 2, s * (winH / 2 + 0.015), 0, win));
     [0, 1].forEach(s => Box(0.03, winH, 0.025, mat.wood, s * winW, 0, 0, win));
     animatables.sideWindow = win;
@@ -463,13 +522,14 @@ export function createScene(
     belt.name = 'conveyor_belt';
     animatables.conveyorBelt = belt;
 
+    // FIX BUG #3: Roller lebih besar (0.07) & low-poly (12 segments) supaya rotasi kelihatan
     [-1, 1].forEach(s => {
-      const r = Cyl(0.055, 0.055, D.DEPTH - 0.06, 16, mat.rollerWood, s * (halfW - 0.12), cy, 0, coop);
+      const r = Cyl(0.07, 0.07, D.DEPTH - 0.06, 12, mat.rollerWood, s * (halfW - 0.12), cy, 0, coop);
       r.rotation.x = PI / 2;
       animatables.conveyorRollers.push(r);
     });
     [-0.3, 0.3].forEach(x => {
-      Cyl(0.04, 0.04, D.DEPTH - 0.06, 16, mat.rollerWood, x, cy - 0.07, 0, coop).rotation.x = PI / 2;
+      Cyl(0.04, 0.04, D.DEPTH - 0.06, 12, mat.rollerWood, x, cy - 0.07, 0, coop).rotation.x = PI / 2;
     });
 
     const motor = Cyl(0.03, 0.03, 0.09, 16, mat.motorGold, -halfW + 0.2, 0.2, halfD + 0.07, coop);
@@ -710,11 +770,12 @@ export function createScene(
       animatables.sideWindow.rotation.y += (ts - animatables.sideWindow.rotation.y) * 6 * delta;
     }
 
-    // Conveyor
+    // Conveyor — FIX BUG #3: rotation.z (bukan y), speed 0.8, motor vibration 0.03
     if (state.device.conveyor && animatables.conveyorBelt) {
-      (animatables.conveyorBelt.material as THREE.MeshStandardMaterial).map!.offset.x -= 0.4 * delta;
-      animatables.conveyorRollers.forEach(r => r.rotation.y += 2.5 * delta);
-      if (animatables.motor) animatables.motor.rotation.z = Math.sin(Date.now() * 0.05) * 0.01;
+      (animatables.conveyorBelt.material as THREE.MeshStandardMaterial).map!.offset.x -= 0.8 * delta;
+      // Roller sudah di-rotate.x = PI/2, jadi sumbu memanjangnya sekarang Z lokal
+      animatables.conveyorRollers.forEach(r => r.rotation.z += 2.5 * delta);
+      if (animatables.motor) animatables.motor.rotation.z = Math.sin(Date.now() * 0.05) * 0.03;
     }
 
     // Chickens
