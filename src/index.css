@@ -1,1 +1,240 @@
 @import "tailwindcss";
+
+:root {
+  --bg-dark: #0a0e1a;
+  --bg-panel: rgba(15, 23, 42, 0.92);
+  --accent: #f97316;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --text-primary: #f9fafb;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+  --border: rgba(255, 255, 255, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: #f0f0f0;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--text-primary);
+}
+
+canvas {
+  display: block;
+}
+
+#hdr {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 12px 16px;
+  background: linear-gradient(var(--bg-panel), transparent);
+  pointer-events: none;
+  z-index: 10;
+}
+
+#hdr h1 {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+#hdr .sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+#conn {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--warning);
+  margin-right: 6px;
+}
+
+#cam {
+  position: fixed;
+  top: 72px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 10;
+}
+
+#cam button {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  font-size: 17px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+#cam button:hover {
+  border-color: var(--accent);
+}
+
+.panel {
+  position: fixed;
+  bottom: 16px;
+  width: 260px;
+  padding: 12px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  backdrop-filter: blur(8px);
+  z-index: 10;
+}
+
+#sp {
+  left: 16px;
+}
+
+#cp {
+  right: 16px;
+}
+
+.ph {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.g {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.card {
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border-left: 3px solid;
+  border-radius: 4px;
+}
+
+.card .l {
+  font: 9px ui-monospace, monospace;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.card .v {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.btn {
+  padding: 12px 8px;
+  min-height: 62px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.btn i {
+  font-style: normal;
+  font-size: 18px;
+}
+
+.btn span {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.btn.on {
+  background: rgba(249, 115, 22, 0.15);
+  border-color: rgba(249, 115, 22, 0.5);
+  color: var(--accent);
+}
+
+#toast {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translate(-50%, -20px);
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  opacity: 0;
+  transition: 0.4s;
+  pointer-events: none;
+  z-index: 20;
+}
+
+#toast.s {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+#load {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.5s;
+  font-size: 14px;
+  color: var(--text-secondary);
+  z-index: 100;
+}
+
+@media (max-width: 768px) {
+  #hdr .sub {
+    display: none;
+  }
+  .panel {
+    width: calc(50% - 20px);
+    padding: 10px;
+    border-radius: 12px;
+    bottom: 8px;
+  }
+  #sp {
+    left: 8px;
+  }
+  #cp {
+    right: 8px;
+  }
+  .card .v {
+    font-size: 14px;
+  }
+  .btn {
+    min-height: 52px;
+  }
+  .btn span {
+    font-size: 8px;
+  }
+  #cam button {
+    width: 36px;
+    height: 36px;
+  }
+}
