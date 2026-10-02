@@ -418,10 +418,11 @@ export function createScene(
     Cyl(0.012, 0.012, 0.08, 8, mat.iron, 0.15, 0.27, 0.04, dg).rotation.z = PI / 2;
 
     // ====== ATAP PELANA DENGAN LUBANG UNTUK JENDELA ======
-    const roofL = D.WIDTH + 0.3;
+    const roofL = D.WIDTH + 0.6;  // 3.0
+    const roofW = D.DEPTH + 0.8;  // 1.6
     const rw = 0.4, rh = 0.28;  // ukuran jendela atap
-    const winXPositions = [-0.6, 0.6];  // posisi X jendela
-    const dh = 0.28;  // jarak dari puncak ke tengah jendela
+    const holeX = [-0.6, 0.6];  // posisi X lubang di koordinat lokal atap
+    const holeY = 0.15;  // posisi Y lubang (tengah slope)
 
     // Material kaca untuk jendela atap
     const roofGlassMat = new THREE.MeshPhysicalMaterial({
@@ -436,57 +437,74 @@ export function createScene(
       depthWrite: false,
     });
 
-    // Fungsi untuk membuat atap dengan lubang
-    function createRoofWithHoles(side: 'front' | 'back') {
+    // Fungsi untuk membuat atap dengan lubang + UV mapping
+    function createRoofWithHoles() {
       const shape = new THREE.Shape();
       // Bentuk atap persegi panjang
       shape.moveTo(-roofL / 2, -slopeLen / 2);
       shape.lineTo(roofL / 2, -slopeLen / 2);
       shape.lineTo(roofL / 2, slopeLen / 2);
       shape.lineTo(-roofL / 2, slopeLen / 2);
-      shape.lineTo(-roofL / 2, -slopeLen / 2);
+      shape.closePath();
 
-      // Buat lubang untuk setiap jendela
-      winXPositions.forEach((wx) => {
+      // Buat 2 lubang untuk jendela
+      holeX.forEach(x => {
         const hole = new THREE.Path();
-        // Posisi lubang di koordinat lokal atap
-        // Konversi posisi X global ke lokal atap (sepanjang slope)
-        const localX = wx;  // sudah dalam rentang yang benar
-        const localY = -slopeLen / 4 + dh * 0.5;  // posisi Y di tengah slope
-        
-        hole.moveTo(localX - rw / 2, localY - rh / 2);
-        hole.lineTo(localX + rw / 2, localY - rh / 2);
-        hole.lineTo(localX + rw / 2, localY + rh / 2);
-        hole.lineTo(localX - rw / 2, localY + rh / 2);
-        hole.lineTo(localX - rw / 2, localY - rh / 2);
+        hole.moveTo(x - rw / 2, holeY - rh / 2);
+        hole.lineTo(x + rw / 2, holeY - rh / 2);
+        hole.lineTo(x + rw / 2, holeY + rh / 2);
+        hole.lineTo(x - rw / 2, holeY + rh / 2);
+        hole.closePath();
         shape.holes.push(hole);
       });
 
-      return new THREE.ShapeGeometry(shape);
+      // Buat geometry dari shape
+      const geo = new THREE.ShapeGeometry(shape);
+      
+      // UV mapping manual untuk texture seng
+      geo.computeBoundingBox();
+      const posAttr = geo.attributes.position;
+      const uvs: number[] = [];
+      for (let i = 0; i < posAttr.count; i++) {
+        const x = posAttr.getX(i);
+        const y = posAttr.getY(i);
+        uvs.push((x + roofL / 2) / roofL, (y + slopeLen / 2) / slopeLen);
+      }
+      geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+
+      return geo;
     }
 
-    // Atap depan (dengan lubang)
-    const roofFrontGeom = createRoofWithHoles('front');
-    const rf = meshHelper(roofFrontGeom, mat.corrugated, 0, wallTop + RH / 2, roofHalf / 2, coop);
+    // Atap depan (dengan 2 lubang)
+    const roofFrontGeom = createRoofWithHoles();
+    const rf = new THREE.Mesh(roofFrontGeom, mat.corrugated);
     rf.rotation.x = -tilt;
+    rf.position.set(0, wallTop + RH / 2, roofW / 4);
+    rf.castShadow = true;
+    rf.receiveShadow = true;
+    coop.add(rf);
 
-    // Atap belakang (dengan lubang)
-    const roofBackGeom = createRoofWithHoles('back');
-    const rb = meshHelper(roofBackGeom, mat.corrugated, 0, wallTop + RH / 2, -roofHalf / 2, coop);
+    // Atap belakang (tanpa lubang - pakai Plane biasa)
+    const rb = Plane(roofL, slopeLen, mat.corrugated, 0, wallTop + RH / 2, -roofW / 4, coop);
     rb.rotation.set(tilt, PI, 0);
 
     // ====== JENDELA ATAP (2 buah) ======
-    winXPositions.forEach((x, i) => {
+    holeX.forEach((x: number, i: number) => {
+      // Hitung posisi lubang dalam koordinat global
+      // holeY = 0.15 dari pusat slope (dalam koordinat lokal atap)
+      const roofSurfaceY = wallTop + RH / 2;
+      const roofSurfaceZ = roofW / 4;
+      
+      // Posisi lubang di permukaan atap (konversi dari lokal ke global)
+      const holeWorldY = roofSurfaceY + holeY * Math.sin(tilt);
+      const holeWorldZ = roofSurfaceZ - holeY * Math.cos(tilt);
+
       // --- SERVO MG90S STATIS (nempel di rangka atap) ---
       const servoGroup = new THREE.Group();
-      const baseY = wallTop + RH - dh * Math.sin(roofAngle);
-      const baseZ = dh * Math.cos(roofAngle);
-
-      // Posisi servo di samping jendela, agak ke atas
       servoGroup.position.set(
         x + rw / 2 + 0.08,
-        baseY + 0.04,
-        baseZ - 0.01
+        holeWorldY + 0.02,
+        holeWorldZ - 0.03
       );
       servoGroup.rotation.x = -tilt;
 
@@ -504,13 +522,13 @@ export function createScene(
       const g = new THREE.Group();
       g.name = 'roof_win_' + (i + 1);
 
-      // Pivot di tepi atas kaca (y = 0 di local = tepi atas)
+      // Pivot di tepi atas lubang (y = 0 di local = tepi atas)
       // Kaca memanjang ke bawah (negative Y)
-      const OUT = 0.02;  // offset dari permukaan atap
+      const OUT = 0.015;  // offset dari permukaan atap
 
       // Posisi pivot di tepi atas lubang
-      const pivotY = wallTop + RH - (dh - rh / 2) * Math.sin(roofAngle) + OUT * Math.cos(roofAngle);
-      const pivotZ = (dh - rh / 2) * Math.cos(roofAngle) + OUT * Math.sin(roofAngle);
+      const pivotY = holeWorldY + rh / 2 * Math.sin(tilt) + OUT;
+      const pivotZ = holeWorldZ + rh / 2 * Math.cos(tilt) + OUT;
 
       g.position.set(x, pivotY, pivotZ);
       g.rotation.x = -tilt;  // sejajar dengan atap saat ditutup
@@ -519,10 +537,10 @@ export function createScene(
       const pane = meshHelper(new THREE.BoxGeometry(rw, rh, 0.008), roofGlassMat, 0, -rh / 2, 0, g);
       pane.renderOrder = 10;
 
-      // Frame kayu tipis mengelilingi kaca
+      // Frame kayu tipis mengelilingi kaca (semua di y ≤ 0)
       const frameThick = 0.015;
       // Frame atas (di pivot)
-      Box(rw + frameThick * 2, frameThick, 0.012, mat.wood, 0, frameThick / 2, 0, g);
+      Box(rw + frameThick * 2, frameThick, 0.012, mat.wood, 0, -frameThick / 2, 0, g);
       // Frame bawah
       Box(rw + frameThick * 2, frameThick, 0.012, mat.wood, 0, -rh - frameThick / 2, 0, g);
       // Frame kiri
@@ -532,7 +550,7 @@ export function createScene(
 
       // Engsel di tepi atas (2 buah)
       [-1, 1].forEach(s => {
-        Cyl(0.004, 0.004, 0.025, 6, mat.iron, s * (rw / 2 - 0.05), 0.005, 0, g)
+        Cyl(0.004, 0.004, 0.025, 6, mat.iron, s * (rw / 2 - 0.05), -0.005, 0, g)
           .rotation.z = PI / 2;
       });
 
