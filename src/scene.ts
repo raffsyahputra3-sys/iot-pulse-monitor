@@ -417,18 +417,14 @@ export function createScene(
     [0.12, 0.42].forEach(y => Box(0.06, 0.05, 0.015, mat.iron, -0.24, y, 0.03, dg));
     Cyl(0.012, 0.012, 0.08, 8, mat.iron, 0.15, 0.27, 0.04, dg).rotation.z = PI / 2;
 
-    // Roof
+    // Roof — hapus ridge cylinder dan frame kayu yang menutupi jendela
     const roofL = D.WIDTH + 0.3;
     const rf = Plane(roofL, slopeLen, mat.corrugated, 0, wallTop + RH / 2, roofHalf / 2, coop);
     rf.rotation.x = -tilt;
     const rb = Plane(roofL, slopeLen, mat.corrugated, 0, wallTop + RH / 2, -roofHalf / 2, coop);
     rb.rotation.set(tilt, PI, 0);
-    const ridge = meshHelper(
-      new THREE.CylinderGeometry(0.03, 0.03, roofL, 8, 1, false, 0, PI),
-      mat.corrugated, 0, wallTop + RH + 0.01, 0, coop
-    );
-    ridge.rotation.z = PI / 2;
-    [-1, 1].forEach(s => Box(roofL, 0.05, 0.02, mat.wood, 0, wallTop - 0.02, s * (roofHalf - 0.01), coop));
+    // Ridge cylinder dihapus agar tidak menutupi jendela
+    // Frame kayu tepi atap dihapus agar tidak menghalangi
 
     // Roof windows — FIX OVERLAP: servo statis terpisah, frame di bawah pivot
     const rw = 0.4, rh = 0.28, dh = 0.28;
@@ -444,30 +440,7 @@ export function createScene(
       depthWrite: false,
     });
     [-0.6, 0.6].forEach((x, i) => {
-      // ====== 1. SERVO STATIS (nempel di atap, tidak ikut buka) ======
-      const servoGroup = new THREE.Group();
-      const baseY = wallTop + RH - dh * Math.sin(roofAngle);
-      const baseZ = dh * Math.cos(roofAngle);
-
-      // pivot servo sedikit di luar + ke samping
-      servoGroup.position.set(
-        x + rw / 2 + 0.09,
-        baseY + 0.035,          // angkat servo sedikit
-        baseZ - 0.02            // mundur sedikit dari sisi kaca
-      );
-      servoGroup.rotation.x = -tilt;
-
-      // body servo
-      Box(0.04, 0.05, 0.03, mat.servo, 0, 0, 0, servoGroup);
-      // bracket besi
-      Box(0.05, 0.06, 0.01, mat.iron, 0, -0.005, -0.02, servoGroup);
-      // kabel jumper ke bawah
-      Cyl(0.004, 0.004, 0.12, 6, mat.wireRed, 0.015, -0.04, 0, servoGroup).rotation.z = 0.2;
-      Cyl(0.004, 0.004, 0.12, 6, mat.wireYellow, 0, -0.04, 0, servoGroup).rotation.z = 0.1;
-      Cyl(0.004, 0.004, 0.12, 6, mat.wireBlack, -0.015, -0.04, 0, servoGroup).rotation.z = 0;
-      coop.add(servoGroup);
-
-      // ====== 2. GRUP JENDELA BERGERAK (hanya kaca + frame) ======
+      // GRUP JENDELA BERGERAK (hanya kaca + frame, servo dihapus)
       const g = new THREE.Group();
       g.name = 'roof_win_' + (i + 1);
 
@@ -526,8 +499,7 @@ export function createScene(
     [-1, 1].forEach(s => Box(winW + 0.04, 0.03, 0.025, mat.wood, winW / 2, s * (winH / 2 + 0.015), 0, win));
     [0, 1].forEach(s => Box(0.03, winH, 0.025, mat.wood, s * winW, 0, 0, win));
     animatables.sideWindow = win;
-    Box(0.04, 0.05, 0.03, mat.servo, wx + 0.04, wy + winH / 2 + 0.05, halfD + 0.03, coop);
-    Box(0.05, 0.04, 0.01, mat.iron, wx + 0.04, wy + winH / 2 + 0.05, halfD + 0.015, coop);
+    // Servo dan bracket dihapus agar tidak menutupi jendela
 
     // Electronics panel
     Box(0.1, 0.14, 0.012, mat.panelGreen, -0.45, PH + 0.4, zf, coop);
