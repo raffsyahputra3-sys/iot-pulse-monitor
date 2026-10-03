@@ -36,6 +36,11 @@ canvas{display:block}
 /* V9: P2 — Scanline subtle overlay di panel */
 .panel::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.02) 0px,rgba(255,255,255,.02) 1px,transparent 1px,transparent 2px);pointer-events:none;border-radius:inherit}
 #sp{left:16px}#cp{right:16px}
+/* Panel kontrol ramping: 200px + tombol kompak */
+#cp{width:200px;padding:10px}
+#cp .btn{min-height:48px;padding:8px 6px}
+#cp .g{gap:6px}
+#cp .ph{margin-bottom:6px}
 .ph{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;font-weight:600}
 .g{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 /* V9: P0 — Card: no translateY hover, no box-shadow, 2px radius */
@@ -90,8 +95,23 @@ canvas{display:block}
 .modal-backdrop{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;animation:backdropIn 150ms linear}
 .modal-backdrop.show{display:flex}
 .modal-backdrop.dock-mode{background:transparent;backdrop-filter:none;pointer-events:none;align-items:flex-end;justify-content:center;padding-bottom:90px}
-.modal-backdrop.dock-mode .modal-card{pointer-events:auto;max-width:340px;max-height:400px;border-radius:4px}
-.modal-backdrop.dock-mode .modal-body{padding:16px;max-height:300px}
+.modal-backdrop.dock-mode .modal-card{pointer-events:auto;width:220px;max-width:220px;max-height:70vh;border-radius:4px}
+.modal-backdrop.dock-mode .modal-body{padding:12px;max-height:60vh}
+.modal-backdrop.dock-mode .modal-header{padding:10px 12px}
+.modal-backdrop.dock-mode .modal-title{font-size:14px}
+.modal-backdrop.dock-mode .modal-big-value{font-size:26px}
+.modal-backdrop.dock-mode .modal-chart{height:110px;margin:8px 0}
+.modal-backdrop.dock-mode .modal-stats{grid-template-columns:1fr 1fr;gap:6px;margin:8px 0}
+.modal-backdrop.dock-mode .modal-stat{padding:8px}
+.modal-backdrop.dock-mode .modal-stat-value{font-size:15px}
+.modal-backdrop.dock-mode .modal-section{margin-bottom:12px}
+.modal-backdrop.dock-mode .modal-slider{margin:10px 0}
+/* Popup ramping vertikal */
+.modal-backdrop.dock-mode .dock-section>div:first-child{margin-bottom:8px !important}
+.modal-backdrop.dock-mode .dock-section span[id$="-val"]{font-size:17px !important}
+.modal-backdrop.dock-mode .dock-section .modal-actions{margin-top:8px !important;gap:6px}
+.modal-backdrop.dock-mode .dock-section .modal-btn{padding:8px 10px;font-size:12px}
+.modal-backdrop.dock-mode .dock-section .modal-slider{margin:6px 0}
 /* V8: Tombol dock jadi 1 kolom (vertikal) */
 .dock-section .modal-actions{flex-direction:column;gap:8px}
 .dock-section .modal-btn{width:100%;padding:14px 16px;font-size:14px}
@@ -207,7 +227,10 @@ canvas{display:block}
 .conn-dot.offline{background:#991b1b;box-shadow:0 0 6px #991b1b}
 #onboarding-overlay{position:fixed;inset:0;z-index:3000;display:none;background:rgba(0,0,0,.7)}
 #onboarding-overlay.show{display:block}
-#onboarding-spotlight{position:absolute;border:2px solid var(--accent);border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,.7);transition:all 300ms linear}
+#onboarding-spotlight{position:absolute;border:3px solid var(--accent-glow);border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,.75),0 0 32px var(--accent-glow),inset 0 0 24px rgba(251,191,36,.25);transition:all 300ms linear;animation:obPulse 1.6s ease-in-out infinite;pointer-events:none}
+@keyframes obPulse{0%,100%{box-shadow:0 0 0 9999px rgba(0,0,0,.75),0 0 18px var(--accent-glow),inset 0 0 18px rgba(251,191,36,.2)}50%{box-shadow:0 0 0 9999px rgba(0,0,0,.75),0 0 42px var(--accent-glow),inset 0 0 32px rgba(251,191,36,.35)}}
+/* Target step onboarding: diangkat di atas overlay + dicerahkan (tanpa ubah position!) */
+.ob-glow{filter:brightness(1.45) saturate(1.3);z-index:3001 !important}
 #onboarding-content{position:absolute;background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;padding:20px;max-width:320px;z-index:3001}
 #onboarding-title{font:600 14px 'JetBrains Mono',monospace;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
 #onboarding-desc{font:400 13px 'IBM Plex Sans',sans-serif;color:var(--text-secondary);margin-bottom:16px;line-height:1.5}
@@ -256,7 +279,7 @@ canvas{display:block}
 <!-- V10: P1 — Command palette -->
 <div id="cmd-palette"><div id="cmd-palette-bg" onclick="closeCmdPalette()"></div><div id="cmd-palette-box"><input id="cmd-palette-input" placeholder="Type a command..." autocomplete="off"><div id="cmd-palette-list"></div></div></div>
 <!-- V10: P0 — Onboarding overlay -->
-<div id="onboarding-overlay"><div id="onboarding-spotlight"></div><div id="onboarding-content"><div id="onboarding-dots"></div><div id="onboarding-title"></div><div id="onboarding-desc"></div><div id="onboarding-actions"><button class="modal-btn" onclick="skipOnboarding()">Skip</button><button class="modal-btn" onclick="prevOnboardingStep()">Prev</button><button class="modal-btn primary" onclick="nextOnboardingStep()">Next</button></div></div></div>
+<div id="onboarding-overlay"><div id="onboarding-spotlight"></div><div id="onboarding-content"><div id="onboarding-dots"></div><div id="onboarding-title"></div><div id="onboarding-desc"></div><div id="onboarding-actions"><button class="modal-btn" onclick="skipOnboarding()">Lewati</button><button class="modal-btn" onclick="prevOnboardingStep()">Kembali</button><button class="modal-btn primary" onclick="nextOnboardingStep()">Lanjut</button></div></div></div>
 <div id="shortcut-hint">
 <div class="hint-card">
 <h3>Keyboard Shortcuts</h3>
@@ -581,6 +604,9 @@ const featherTex=(baseCol)=>tex(128,128,(x,w,h)=>{x.fillStyle=baseCol;x.fillRect
 for(let i=0;i<60;i++){const py=R()*h,angle=rr(-.3,.3);x.strokeStyle=`rgba(${R()*40},${R()*30},${R()*20},${.08+R()*.12})`;x.lineWidth=rr(.5,2);x.beginPath();x.moveTo(0,py);x.lineTo(w,py+Math.tan(angle)*w);x.stroke()}
 // Spots (texture detail)
 for(let i=0;i<30;i++){const px=R()*w,py=R()*h;x.fillStyle=`rgba(${R()*50},${R()*40},${R()*30},${.06+R()*.1})`;x.beginPath();x.ellipse(px,py,rr(2,5),rr(1,3),R()*PI,0,2*PI);x.fill()}},1,1);
+// Collider ayam ↔ dinding: radius tabrakan + batas dalam kandang
+function chickenRadius(c){return .24*(c.scale?c.scale.x:1)}
+function collideWalls(x,z,r){const bx=halfW-.06-r,bz=halfD-.06-r;return{x:Math.max(-bx,Math.min(bx,x)),z:Math.max(-bz,Math.min(bz,z))}}
 function buildChickens(n){for(let i=0;i<n;i++){const c=new THREE.Group(),pose=Math.floor(R()*3);
 // UPGRADE: Variasi warna ayam (40% putih, 30% coklat, 20% hitam, 10% jago merah)
 const colorRoll=R();let cb,isRooster=false;
@@ -605,7 +631,7 @@ mesh(new THREE.SphereGeometry(.015,6,6),mat.chickenComb,0,hy-.03,hz+.06,c);
 // UPGRADE: Jago punya tail feather
 if(isRooster){const tail=mesh(new THREE.ConeGeometry(.04,.15,8),cb,0,.15,-.12,c);tail.rotation.x=PI/4}
 const px=(R()-.5)*(D.WIDTH-.6),pz=pose===0?(R()>.5?1:-1)*(halfD-.15-R()*.1):(R()-.5)*(D.DEPTH-.35);
-c.position.set(px,PH+.02,pz);c.rotation.y=R()*PI*2;
+const _cc=collideWalls(px,pz,.24*sc);c.position.set(_cc.x,PH+.02,_cc.z);c.rotation.y=R()*PI*2;
 c.userData={phase:R()*PI*2,peckSpeed:2+R()*1.5,head,beak};scene.add(c);animatables.chickens.push(c)}}
 buildChickens(12);
 const dust=(()=>{const n=100,p=new Float32Array(n*3);for(let i=0;i<n;i++){p[i*3]=(R()-.5)*4;p[i*3+1]=R()*2;p[i*3+2]=(R()-.5)*2}
@@ -1048,23 +1074,26 @@ $('modal-title').textContent=info.title;$('modal-body').innerHTML=body;$('modal-
 function toggleUI(){$('body').classList.toggle('ui-hidden')}
 // V10: P0 — Onboarding tour
 const _onboardingSteps=[
-{target:'sp',title:'Sensor Panel',desc:'Monitor real-time temperature, humidity, gas, and feed levels from IoT sensors.'},
-{target:'cp',title:'Control Panel',desc:'Operate vents, conveyor, and lighting. Use Tools section for emergency stop and console commands.'},
-{target:'minimap-container',title:'Live Radar',desc:'Track chicken positions in real-time on the minimap.'},
-{target:'cam',title:'Camera Views',desc:'Switch between isometric, front, inside, and top-down views.'},
-{target:'stats-bar',title:'System Status',desc:'Monitor uptime, request count, and overall system health.'}
+{target:'sp',title:'Panel Sensor',desc:'Pantau suhu, kelembapan, gas, dan level pakan secara real-time dari sensor IoT. Klik kartunya untuk grafik & batas ambang.'},
+{target:'cp',title:'Panel Kontrol',desc:'Buka/tutup ventilasi, jalankan conveyor, dan atur lampu. Buka bagian Tools untuk emergency stop dan perintah console.'},
+{target:'minimap-container',title:'Radar Live',desc:'Pantau posisi ayam secara real-time di minimap.'},
+{target:'cam',title:'Tampilan Kamera',desc:'Ganti sudut pandang: isometrik, depan, dalam, atau atas.'},
+{target:'hdr',title:'Status Sistem',desc:'Pantau uptime, jumlah request, dan kesehatan sistem keseluruhan di header.'}
 ];
-let _onboardingStep=0;
+let _onboardingStep=0;let _obRO=null;let _obSig='';
 function startOnboarding(){if(localStorage.getItem('v10-onboarding-done'))return;_onboardingStep=0;renderOnboardingStep()}
 function renderOnboardingStep(){const step=_onboardingSteps[_onboardingStep];if(!step){completeOnboarding();return}const el=document.getElementById(step.target);const overlay=$('onboarding-overlay');const spotlight=$('onboarding-spotlight');const content=$('onboarding-content');const dots=$('onboarding-dots');const title=$('onboarding-title');const desc=$('onboarding-desc');
-overlay.classList.add('show');dots.innerHTML=_onboardingSteps.map((_,i)=>`<div id="ob-dot-${i}" class="onboarding-dot${i===_onboardingStep?' active':''}"></div>`).join('');title.textContent=`Step ${_onboardingStep+1}/${_onboardingSteps.length}: ${step.title}`;desc.textContent=step.desc;
-if(el){const r=el.getBoundingClientRect();spotlight.style.cssText=`top:${r.top-4}px;left:${r.left-4}px;width:${r.width+8}px;height:${r.height+8}px`}else{spotlight.style.display='none'}
-content.style.top='50%';content.style.left='50%';content.style.transform='translate(-50%,-50%)'}
+overlay.classList.add('show');dots.innerHTML=_onboardingSteps.map((_,i)=>`<div id="ob-dot-${i}" class="onboarding-dot${i===_onboardingStep?' active':''}"></div>`).join('');title.textContent=`Langkah ${_onboardingStep+1}/${_onboardingSteps.length}: ${step.title}`;desc.textContent=step.desc;
+document.querySelectorAll('.ob-glow').forEach(x=>x.classList.remove('ob-glow'));
+if(el){el.classList.add('ob-glow');const r=el.getBoundingClientRect();spotlight.style.cssText=`top:${r.top-4}px;left:${r.left-4}px;width:${r.width+8}px;height:${r.height+8}px`;_obSig=[r.top,r.left,r.width,r.height].map(v=>Math.round(v)).join(',')}else{spotlight.style.display='none'}
+content.style.top='50%';content.style.left='50%';content.style.transform='translate(-50%,-50%)';if(_obRO){_obRO.disconnect();_obRO=null}if(el&&window.ResizeObserver){_obRO=new ResizeObserver(()=>{const o=$('onboarding-overlay');if(!o||!o.classList.contains('show'))return;const step=_onboardingSteps[_onboardingStep];if(!step)return;const t=document.getElementById(step.target);if(!t)return;const b=t.getBoundingClientRect();const s=[b.top,b.left,b.width,b.height].map(v=>Math.round(v)).join(',');if(s!==_obSig)renderOnboardingStep()});try{_obRO.observe(el)}catch(e){}}}
 function nextOnboardingStep(){_onboardingStep++;renderOnboardingStep()}
 function prevOnboardingStep(){if(_onboardingStep>0){_onboardingStep--;renderOnboardingStep()}}
 function skipOnboarding(){completeOnboarding()}
-function completeOnboarding(){localStorage.setItem('v10-onboarding-done','true');$('onboarding-overlay').classList.remove('show')}
-// Close onboarding on backdrop click
+function completeOnboarding(){if(_obRO){_obRO.disconnect();_obRO=null}document.querySelectorAll('.ob-glow').forEach(x=>x.classList.remove('ob-glow'));localStorage.setItem('v10-onboarding-done','true');$('onboarding-overlay').classList.remove('show')}
+// Ukur ulang spotlight saat layout berubah (resize / font selesai load) selama tur tampil
+addEventListener('resize',()=>{const o=$('onboarding-overlay');if(o&&o.classList.contains('show'))renderOnboardingStep()});
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{const o=$('onboarding-overlay');if(o&&o.classList.contains('show'))renderOnboardingStep()});
 $('onboarding-overlay')&&$('onboarding-overlay').addEventListener('click',e=>{if(e.target.id==='onboarding-overlay')skipOnboarding()});
 // V10: P2 — Theme presets cycle
 const _themes=['','theme-cyan','theme-emerald'];let _themeIdx=0;
@@ -1095,8 +1124,9 @@ const peck=Math.sin(time*peckSpeed+phase);
 if(peck>.7){head.rotation.x=lerp(head.rotation.x,PI/3,.12);beak.rotation.x=lerp(beak.rotation.x,PI/3+PI/2,.12)}
 else{head.rotation.x=lerp(head.rotation.x,0,.08);beak.rotation.x=lerp(beak.rotation.x,PI/2,.08)}
 if(Math.sin(time*.5+phase*2)>.9){c.rotation.y+=delta*.3;
-const nx=c.position.x+Math.sin(c.rotation.y)*delta*.05,nz=c.position.z+Math.cos(c.rotation.y)*delta*.05;
-if(Math.abs(nx)<halfW-.3&&Math.abs(nz)<halfD-.15){c.position.x=nx;c.position.z=nz}}});
+const _cr=chickenRadius(c),nx=c.position.x+Math.sin(c.rotation.y)*delta*.05,nz=c.position.z+Math.cos(c.rotation.y)*delta*.05;
+const _bx=halfW-.06-_cr,_bz=halfD-.06-_cr;
+if(Math.abs(nx)<=_bx&&Math.abs(nz)<=_bz){c.position.x=nx;c.position.z=nz}else{c.rotation.y+=delta*2.5}}});
 {const p=dust.geometry.attributes.position.array;for(let i=0;i<p.length;i+=3){p[i+1]+=Math.sin(time*.5+i)*.0002;p[i]+=.0003;if(p[i]>2)p[i]=-2}dust.geometry.attributes.position.needsUpdate=true}
 controls.update();renderer.render(scene,camera)}
 

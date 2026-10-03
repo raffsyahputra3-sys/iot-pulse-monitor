@@ -56,10 +56,10 @@ class BackendConnector {
       this.sensorCb(sensor);
     });
 
-    // Device state update dari backend
+    // Device state update dari backend (teruskan delta apa adanya, jangan full internal)
     this.socket.on('deviceState', (state) => {
       Object.assign(this.device, state);
-      if (this.deviceCb) this.deviceCb(this.device);
+      if (this.deviceCb) this.deviceCb(state);
     });
 
     // Device status (online/offline)
@@ -80,7 +80,7 @@ class BackendConnector {
     } else {
       console.warn('[connector] Socket offline — command tidak terkirim:', actuator, value);
     }
-    if (this.deviceCb) this.deviceCb(this.device);
+    if (this.deviceCb) this.deviceCb({ [actuator]: value });
   }
 }
 window.BackendConnector = BackendConnector;
