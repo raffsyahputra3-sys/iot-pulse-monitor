@@ -1,8 +1,9 @@
 // connector.js — Bridge antara frontend v10 dan backend Socket.IO
 // Mapping: backend kirim {suhu, kelembapan}, frontend expect {temp, humid}
 class BackendConnector {
-  constructor(url = 'http://localhost:4000') {
-    this.url = url;
+  constructor(url) {
+    // Default: same-origin saat di-serve backend (production); localhost hanya fallback dev file://
+    this.url = url || ((location.protocol === 'http:' || location.protocol === 'https:') ? location.origin : 'http://localhost:4000');
     this.socket = null;
     this.sensorCb = null;
     this.deviceCb = null;

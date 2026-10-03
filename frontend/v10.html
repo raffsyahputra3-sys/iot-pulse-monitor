@@ -1115,7 +1115,7 @@ updateLoadProgress(10,0);
 setTimeout(()=>updateLoadProgress(35,1),100);
 setTimeout(()=>updateLoadProgress(60,2),200);
 setTimeout(()=>updateLoadProgress(85,3),400);
-source=new BackendConnector('http://localhost:4000');source.connect();
+source=new BackendConnector();source.connect();
 // V10: Adapter — backend kirim {suhu, kelembapan}, map ke state.sensor
 source.onSensor((sensor)=>{
   if(sensor.temp!=null)state.sensor.temp=sensor.temp;
@@ -1124,6 +1124,22 @@ source.onSensor((sensor)=>{
 });
 source.onStatus((status, via)=>{
   state.connection.status=status;
+  notify();
+});
+// FIX: sambungkan device connector → state 3D (bool ↔ angle dua arah) + render ulang
+source.onDevice((device)=>{
+  for (const k of Object.keys(device)) {
+    const v = device[k];
+    state.device[k] = v;
+    if (k === 'roofAngle') state.device.roofWindow = v > 5;
+    else if (k === 'roofWindow') state.device.roofAngle = v ? 90 : 0;
+    else if (k === 'sideAngle') state.device.sideWindow = v > 5;
+    else if (k === 'sideWindow') state.device.sideAngle = v ? 90 : 0;
+    else if (k === 'conveyorRpm') state.device.conveyor = v > 0;
+    else if (k === 'conveyor') state.device.conveyorRpm = v ? (state.device.conveyorRpm || 80) : 0;
+    else if (k === 'lights' && !v) state.device.lightBrightness = 0;
+    else if (k === 'lightBrightness') state.device.lights = v > 0;
+  }
   notify();
 });
 initSparklines();
