@@ -71,11 +71,11 @@ class BackendConnector {
   onDevice(cb) { this.deviceCb = cb; }
   onStatus(cb) { this.statusCb = cb; }
 
-  // Kirim command ke backend
-  sendCommand(actuator, value) {
+  // Kirim command ke backend (deviceId opsional; default esp32-01, bisa dioverride via source.defaultDeviceId)
+  sendCommand(actuator, value, deviceId) {
     this.device[actuator] = value;
     if (this.socket && this.socket.connected) {
-      this.socket.emit('command', { actuator, value, ts: Date.now() });
+      this.socket.emit('command', { actuator, value, deviceId: deviceId || this.defaultDeviceId || 'esp32-01', ts: Date.now() });
     } else {
       console.warn('[connector] Socket offline — command tidak terkirim:', actuator, value);
     }

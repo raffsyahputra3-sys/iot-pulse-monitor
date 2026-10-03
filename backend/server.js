@@ -21,14 +21,18 @@ const errorHandler = require('./src/middlewares/errorHandler');
 const app = express();
 const server = http.createServer(app);
 
+// CORS: dukung multi-origin via koma, mis. "https://a.vercel.app,https://b.onrender.com"
+const corsOrigins = (process.env.CORS_ORIGIN || '*').split(',').map((s) => s.trim()).filter(Boolean);
+const corsOrigin = corsOrigins.length <= 1 ? (corsOrigins[0] || '*') : corsOrigins;
+
 // Socket.IO
 const io = new Server(server, {
-  cors: { origin: process.env.CORS_ORIGIN || '*' }
+  cors: { origin: corsOrigin }
 });
 app.set('io', io);
 
 // Middleware
-app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
+app.use(cors({ origin: corsOrigin }));
 app.use(express.json());
 
 // Route default → dashboard 3D baru (frontend/v10.html)
