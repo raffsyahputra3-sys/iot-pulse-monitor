@@ -1081,7 +1081,7 @@ const _onboardingSteps=[
 {target:'hdr',title:'Status Sistem',desc:'Pantau uptime, jumlah request, dan kesehatan sistem keseluruhan di header.'}
 ];
 let _onboardingStep=0;let _obRO=null;let _obSig='';
-function startOnboarding(){if(localStorage.getItem('v10-onboarding-done'))return;_onboardingStep=0;renderOnboardingStep()}
+function startOnboarding(){_onboardingStep=0;_obSig='';renderOnboardingStep()}
 function renderOnboardingStep(){const step=_onboardingSteps[_onboardingStep];if(!step){completeOnboarding();return}const el=document.getElementById(step.target);const overlay=$('onboarding-overlay');const spotlight=$('onboarding-spotlight');const content=$('onboarding-content');const dots=$('onboarding-dots');const title=$('onboarding-title');const desc=$('onboarding-desc');
 overlay.classList.add('show');dots.innerHTML=_onboardingSteps.map((_,i)=>`<div id="ob-dot-${i}" class="onboarding-dot${i===_onboardingStep?' active':''}"></div>`).join('');title.textContent=`Langkah ${_onboardingStep+1}/${_onboardingSteps.length}: ${step.title}`;desc.textContent=step.desc;
 document.querySelectorAll('.ob-glow').forEach(x=>x.classList.remove('ob-glow'));
