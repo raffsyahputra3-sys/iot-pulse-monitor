@@ -34,11 +34,10 @@ app.use(express.json());
 // Route default → dashboard 3D baru (frontend/v10.html)
 // Dashboard lama tetap bisa diakses via /uiuxbaru
 const frontendPath = path.join(__dirname, '..', 'frontend');
-app.use(express.static(frontendPath));
-
 app.get('/', (req, res) => {
   res.sendFile(path.join(frontendPath, 'v10.html'));
 });
+app.use(express.static(frontendPath));
 
 // Routes
 app.use('/api/auth', authRoutes);
