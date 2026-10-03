@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Kandang Ayam Pintar — Smart Poultry Coop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<style>
+  /* ============================================
+     RESET & BASE
+     ============================================ */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-dark: #0a0e1a;
+    --bg-panel: rgba(15, 23, 42, 0.92);
+    --bg-elevated: #1f2937;
+    --accent: #f97316;
+    --accent-hover: #ea580c;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --text-primary: #f9fafb;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+    --border: rgba(255, 255, 255, 0.08);
+  }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    touch-action: manipulation;
+  }
+
+  /* ============================================
+     CANVAS 3D
+     ============================================ */
+  #canvas-container {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    touch-action: none;
+  }
+
+  #canvas-container canvas {
+    display: block;
+    outline: none;
+  }
+
+  /* ============================================
+     HEADER
+     ============================================ */
+  .header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: linear-gradient(to bottom, rgba(10,14,26,0.9), transparent);
+    z-index: 20;
+    pointer-events: none;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    pointer-events: auto;
+  }
+
+  .logo-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(249, 115, 22, 0.15);
+    border: 1px solid rgba(249, 115, 22, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+
+  .header-title {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--text-primary);
+  }
+
+  .header-sub {
+    font-size: 11px;
+    font-family: ui-monospace, monospace;
+    color: var(--accent);
+    margin-top: 2px;
+  }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: var(--bg-panel);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 999px;
+    font-size: 11px;
+    font-family: ui-monospace, monospace;
+    color: var(--text-secondary);
+    pointer-events: auto;
+  }
+
+  .status-dot {
+    position: relative;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+  }
+
+  .status-dot::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: var(--success);
+    animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+
+  @keyframes ping {
+    75%, 100% { transform: scale(2.5); opacity: 0; }
+  }
+
+  /* ============================================
+     CAMERA TOOLBAR (kanan atas)
+     ============================================ */
+  .camera-toolbar {
+    position: fixed;
+    top: 80px;
+    right: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 20;
+  }
+
+  .cam-btn {
+    width: 42px;
+    height: 42px;
+    background: var(--bg-panel);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-secondary);
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cam-btn:hover {
+    background: rgba(249, 115, 22, 0.15);
+    border-color: rgba(249, 115, 22, 0.5);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+  }
+
+  .cam-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  /* ============================================
+     SENSOR PANEL (kiri bawah)
+     ============================================ */
+  .sensor-panel {
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+    width: 260px;
+    padding: 14px;
+    background: var(--bg-panel);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    z-index: 20;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  }
+
+  .panel-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+
+  .sensor-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .sensor-card {
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    border-left: 3px solid;
+  }
+
+  .sensor-card.temp { border-color: var(--warning); }
+  .sensor-card.humid { border-color: #06b6d4; }
+  .sensor-card.gas { border-color: var(--danger); }
+  .sensor-card.feed { border-color: var(--success); }
+
+  .sensor-label {
+    font-size: 9px;
+    font-family: ui-monospace, monospace;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .sensor-value {
+    font-size: 18px;
+    font-weight: 700;
+    font-family: ui-monospace, monospace;
+    line-height: 1;
+  }
+
+  .sensor-card.temp .sensor-value { color: var(--warning); }
+  .sensor-card.humid .sensor-value { color: #22d3ee; }
+  .sensor-card.gas .sensor-value { color: var(--danger); }
+  .sensor-card.feed .sensor-value { color: var(--success); }
+
+  /* ============================================
+     CONTROL PANEL (kanan bawah)
+     ============================================ */
+  .control-panel {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    width: 260px;
+    padding: 14px;
+    background: var(--bg-panel);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    z-index: 20;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  }
+
+  .control-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .ctrl-btn {
+    padding: 12px 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 62px;
+  }
+
+  .ctrl-btn .icon { font-size: 18px; line-height: 1; }
+
+  .ctrl-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+  }
+
+  .ctrl-btn:active { transform: scale(0.97); }
+
+  .ctrl-btn.active {
+    background: rgba(249, 115, 22, 0.15);
+    border-color: rgba(249, 115, 22, 0.5);
+    color: var(--accent);
+  }
+
+  .ctrl-btn.active .icon { filter: drop-shadow(0 0 6px var(--accent)); }
+
+  /* ============================================
+     TOAST
+     ============================================ */
+  .toast {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    padding: 10px 20px;
+    background: var(--bg-panel);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(249, 115, 22, 0.4);
+    border-radius: 999px;
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    z-index: 30;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    max-width: calc(100vw - 32px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ============================================
+     LOADING
+     ============================================ */
+  .loading {
+    position: fixed;
+    inset: 0;
+    background: var(--bg-dark);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    z-index: 100;
+    transition: opacity 0.5s ease;
+  }
+
+  .loading.hide { opacity: 0; pointer-events: none; }
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(249, 115, 22, 0.2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+  }
+
+  /* ============================================
+     MOBILE RESPONSIVE
+     ============================================ */
+  @media (max-width: 768px) {
+    .header-sub { display: none; }
+
+    .sensor-panel,
+    .control-panel {
+      width: calc(50% - 20px);
+      padding: 10px;
+      border-radius: 12px;
+    }
+
+    .sensor-panel { left: 8px; bottom: 8px; }
+    .control-panel { right: 8px; bottom: 8px; }
+
+    .panel-title {
+      font-size: 9px;
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+    }
+
+    .sensor-grid { gap: 5px; }
+
+    .sensor-card { padding: 6px; }
+    .sensor-label { font-size: 8px; }
+    .sensor-value { font-size: 14px; }
+
+    .control-grid { gap: 5px; }
+
+    .ctrl-btn {
+      padding: 8px 4px;
+      min-height: 52px;
+      font-size: 8px;
+      gap: 4px;
+    }
+
+    .ctrl-btn .icon { font-size: 14px; }
+
+    .camera-toolbar {
+      top: 70px;
+      right: 8px;
+    }
+
+    .cam-btn {
+      width: 36px;
+      height: 36px;
+      font-size: 15px;
+    }
+
+    .toast { font-size: 10px; padding: 8px 14px; }
+  }
+
+  @media (max-width: 380px) {
+    .sensor-value { font-size: 12px; }
+    .ctrl-btn { font-size: 7px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================
+     LOADING SCREEN
+     ============================================ -->
+<div class="loading" id="loading">
+  <div class="spinner"></div>
+  <div class="loading-text">MEMUAT KANDANG...</div>
+</div>
+
+<!-- ============================================
+     CANVAS 3D
+     ============================================ -->
+<div id="canvas-container"></div>
+
+<!-- ============================================
+     HEADER
+     ============================================ -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo-icon">🐔</div>
+    <div>
+      <div class="header-title">SMART POULTRY COOP</div>
+      <div class="header-sub">7m × 1.5m × 3.5m • Industrial IoT</div>
+    </div>
+  </div>
+  <div class="status-pill">
+    <span class="status-dot"></span>
+    <span>ESP32 ONLINE</span>
+  </div>
+</div>
+
+<!-- ============================================
+     CAMERA TOOLBAR
+     ============================================ -->
+<div class="camera-toolbar">
+  <button class="cam-btn active" data-view="human" title="Sudut Manusia">👤</button>
+  <button class="cam-btn" data-view="bird" title="Tampak Atas">🦅</button>
+  <button class="cam-btn" data-view="conveyor" title="Detail Conveyor">⚙️</button>
+  <button class="cam-btn" data-view="windows" title="Detail Jendela">🪟</button>
+</div>
+
+<!-- ============================================
+     SENSOR PANEL
+     ============================================ -->
+<div class="sensor-panel">
+  <div class="panel-title">
+    <span>Data Sensor</span>
+    <span style="color: var(--success);">● LIVE</span>
+  </div>
+  <div class="sensor-grid">
+    <div class="sensor-card temp">
+      <span class="sensor-label">DHT22 Temp</span>
+      <span class="sensor-value" id="temp-val">29.2°C</span>
+    </div>
+    <div class="sensor-card humid">
+      <span class="sensor-label">DHT22 Humid</span>
+      <span class="sensor-value" id="humid-val">68%</span>
+    </div>
+    <div class="sensor-card gas">
+      <span class="sensor-label">MQ-90 NH₃</span>
+      <span class="sensor-value" id="gas-val">12ppm</span>
+    </div>
+    <div class="sensor-card feed">
+      <span class="sensor-label">Feed Stock</span>
+      <span class="sensor-value" id="feed-val">84%</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================
+     CONTROL PANEL
+     ============================================ -->
+<div class="control-panel">
+  <div class="panel-title">
+    <span>Kontrol Aktuator</span>
+  </div>
+  <div class="control-grid">
+    <button class="ctrl-btn active" id="btn-roof">
+      <span class="icon">🪟</span>
+      <span>Jendela Atap</span>
+    </button>
+    <button class="ctrl-btn active" id="btn-side">
+      <span class="icon">🚪</span>
+      <span>Jendela Samping</span>
+    </button>
+    <button class="ctrl-btn" id="btn-conveyor">
+      <span class="icon">⚙️</span>
+      <span>Conveyor</span>
+    </button>
+    <button class="ctrl-btn" id="btn-lights">
+      <span class="icon">💡</span>
+      <span>Lampu</span>
+    </button>
+  </div>
+</div>
+
+<!-- ============================================
+     TOAST
+     ============================================ -->
+<div class="toast" id="toast">
+  <span>▸</span>
+  <span id="toast-msg">System initialized</span>
+</div>
+
+<script>
+/* ============================================================
+   KANDANG AYAM PINTAR — Three.js Real-Scale
+   ============================================================ */
+
+'use strict';
+
+/* ---------- GLOBAL STATE ---------- */
+const state = {
+  roofOpen: true,
+  sideOpen: true,
+  conveyor: false,
+  lights: false,
+  sensor: { temp: 29.2, humid: 68, gas: 12, feed: 84 },
+};
+
+let scene, camera, renderer, controls;
+let coopGroup;
+const animatables = {
+  roofWindows: [],
+  sideWindow: null,
+  conveyorBelt: null,
+  conveyorRollers: [],
+  motor: null,
+  interiorLights: [],
+  chickens: [],
+};
+const clock = new THREE.Clock();
+
+/* Dimensi skala nyata (meter) */
+const D = {
+  WIDTH: 7.0,
+  DEPTH: 1.5,
+  HEIGHT: 3.5,
+  PILLAR_H: 0.5,
+  WALL_H: 2.0,
+  ROOF_H: 1.0,
+};
+
+/* ============================================================
+   TEXTURE PROCEDURAL
+   ============================================================ */
+
+function createWireMeshTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, 128, 128);
+  ctx.strokeStyle = '#94a3b8';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(0, 64); ctx.lineTo(128, 64);
+  ctx.moveTo(64, 0); ctx.lineTo(64, 128);
+  ctx.stroke();
+  ctx.fillStyle = '#8b4513';
+  ctx.fillRect(60, 60, 8, 8);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(70, 20);
+  return t;
+}
+
+function createConveyorTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 80; i++) {
+    ctx.fillStyle = Math.random() > 0.5 ? '#5c4033' : '#a89f91';
+    ctx.beginPath();
+    ctx.arc(Math.random() * 256, Math.random() * 256, Math.random() * 4 + 1, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(20, 2);
+  return t;
+}
+
+function createWoodTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#8b5a2b';
+  ctx.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 50; i++) {
+    ctx.strokeStyle = `rgba(60,30,10,${Math.random() * 0.3 + 0.1})`;
+    ctx.lineWidth = Math.random() * 2 + 0.5;
+    ctx.beginPath();
+    const y = Math.random() * 256;
+    ctx.moveTo(0, y);
+    ctx.bezierCurveTo(85, y + (Math.random() - 0.5) * 20, 170, y + (Math.random() - 0.5) * 20, 256, y);
+    ctx.stroke();
+  }
+  for (let i = 0; i < 10; i++) {
+    ctx.fillStyle = `rgba(40,20,5,${Math.random() * 0.2})`;
+    ctx.beginPath();
+    ctx.arc(Math.random() * 256, Math.random() * 256, Math.random() * 30 + 10, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
+
+function createCorrugatedTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#5a6066';
+  ctx.fillRect(0, 0, 64, 64);
+  for (let i = 0; i < 64; i += 4) {
+    ctx.fillStyle = i % 8 === 0 ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.15)';
+    ctx.fillRect(i, 0, 2, 64);
+  }
+  for (let i = 0; i < 6; i++) {
+    ctx.fillStyle = `rgba(139,69,19,${Math.random() * 0.3})`;
+    ctx.beginPath();
+    ctx.arc(Math.random() * 64, Math.random() * 64, Math.random() * 6 + 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(20, 1);
+  return t;
+}
+
+/* ============================================================
+   MATERIALS
+   ============================================================ */
+
+function createMaterials() {
+  return {
+    wood: new THREE.MeshStandardMaterial({ map: createWoodTexture(), roughness: 0.85 }),
+    concrete: new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.95 }),
+    iron: new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.85, roughness: 0.35 }),
+    wireMesh: new THREE.MeshStandardMaterial({
+      map: createWireMeshTexture(),
+      transparent: true,
+      side: THREE.DoubleSide,
+      alphaTest: 0.4,
+      roughness: 0.6,
+      metalness: 0.4,
+    }),
+    corrugated: new THREE.MeshStandardMaterial({ map: createCorrugatedTexture(), roughness: 0.55, metalness: 0.4 }),
+    conveyorBelt: new THREE.MeshStandardMaterial({ map: createConveyorTexture(), roughness: 0.95 }),
+    acrylic: new THREE.MeshPhysicalMaterial({
+      color: 0xffffff, transmission: 0.9, opacity: 1, transparent: true,
+      roughness: 0.05, ior: 1.5,
+    }),
+    servo: new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.5, metalness: 0.2 }),
+    motorGold: new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.7, roughness: 0.3 }),
+    esp32Panel: new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.5 }),
+    arduinoPanel: new THREE.MeshStandardMaterial({ color: 0x0e7490, roughness: 0.5 }),
+    l298n: new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.6 }),
+    feederYellow: new THREE.MeshStandardMaterial({ color: 0xeab308, roughness: 0.7 }),
+    drinkerRed: new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.7 }),
+    chickenBody: new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.95 }),
+    chickenBeak: new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.6 }),
+    chickenComb: new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.7 }),
+  };
+}
+
+/* ============================================================
+   INIT SCENE
+   ============================================================ */
+
+function init() {
+  const container = document.getElementById('canvas-container');
+
+  // Scene
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x87ceeb);
+  scene.fog = new THREE.FogExp2(0x87ceeb, 0.012);
+
+  // Camera
+  camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 200);
+  camera.position.set(6, 1.8, 6);
+
+  // Renderer
+  renderer = new THREE.WebGLRenderer({
+    antialias: window.innerWidth > 768,
+    powerPreference: 'high-performance',
+  });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.0;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  container.appendChild(renderer.domElement);
+
+  // Controls
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+  controls.maxPolarAngle = Math.PI / 2 - 0.02;
+  controls.minDistance = 2;
+  controls.maxDistance = 30;
+  controls.target.set(0, 1.5, 0);
+  controls.touches = {
+    ONE: THREE.TOUCH.ROTATE,
+    TWO: THREE.TOUCH.DOLLY_PAN,
+  };
+
+  // Lighting
+  setupLighting();
+
+  // Ground
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(100, 100),
+    new THREE.MeshStandardMaterial({ color: 0x4d533c, roughness: 0.95 })
+  );
+  ground.rotation.x = -Math.PI / 2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  // Build
+  buildCoop();
+  buildChickens();
+
+  // Events
+  window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', onResize);
+
+  // UI
+  bindUI();
+
+  // Hide loading
+  setTimeout(() => {
+    document.getElementById('loading').classList.add('hide');
+    showToast('Kandang siap. ESP32 terhubung.');
+  }, 600);
+
+  // Start
+  animate();
+
+  // Simulasi sensor
+  startSensorSimulation();
+}
+
+/* ============================================================
+   LIGHTING — 3-Point + Ambient
+   ============================================================ */
+
+function setupLighting() {
+  // Key light (matahari pagi)
+  const keyLight = new THREE.DirectionalLight(0xfff4d4, 2.4);
+  keyLight.position.set(-15, 12, 6);
+  keyLight.castShadow = true;
+  keyLight.shadow.mapSize.set(2048, 2048);
+  keyLight.shadow.camera.near = 0.5;
+  keyLight.shadow.camera.far = 60;
+  keyLight.shadow.camera.left = -12;
+  keyLight.shadow.camera.right = 12;
+  keyLight.shadow.camera.top = 12;
+  keyLight.shadow.camera.bottom = -12;
+  keyLight.shadow.bias = -0.0005;
+  keyLight.shadow.normalBias = 0.02;
+  scene.add(keyLight);
+
+  // Fill light (langit)
+  const fillLight = new THREE.DirectionalLight(0x87ceeb, 0.7);
+  fillLight.position.set(10, 6, -6);
+  scene.add(fillLight);
+
+  // Rim light (tepian)
+  const rimLight = new THREE.DirectionalLight(0xffffff, 1.0);
+  rimLight.position.set(0, 5, -12);
+  scene.add(rimLight);
+
+  // Ambient
+  scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+
+  // Hemisphere (outdoor)
+  const hemi = new THREE.HemisphereLight(0x87ceeb, 0x4d533c, 0.5);
+  scene.add(hemi);
+}
+
+/* ============================================================
+   BUILD COOP
+   ============================================================ */
+
+function buildCoop() {
+  coopGroup = new THREE.Group();
+  const mats = createMaterials();
+
+  // 1. TIANG BETON
+  const pillarGeo = new THREE.CylinderGeometry(0.1, 0.15, D.PILLAR_H, 8);
+  const xPositions = [-D.WIDTH / 2 + 0.1, 0, D.WIDTH / 2 - 0.1];
+  const zPositions = [-D.DEPTH / 2 + 0.1, D.DEPTH / 2 - 0.1];
+
+  xPositions.forEach(x => zPositions.forEach(z => {
+    const p = new THREE.Mesh(pillarGeo, mats.concrete);
+    p.position.set(x, D.PILLAR_H / 2, z);
+    p.castShadow = true;
+    p.receiveShadow = true;
+    coopGroup.add(p);
+  }));
+
+  // 2. CONVEYOR
+  const conveyorY = D.PILLAR_H - 0.1;
+  const rollerGeo = new THREE.CylinderGeometry(0.075, 0.075, D.DEPTH - 0.2, 16);
+
+  const rollerL = new THREE.Mesh(rollerGeo, mats.iron);
+  rollerL.rotation.x = Math.PI / 2;
+  rollerL.position.set(-D.WIDTH / 2 + 0.2, conveyorY, 0);
+  rollerL.castShadow = true;
+  coopGroup.add(rollerL);
+  animatables.conveyorRollers.push(rollerL);
+
+  const rollerR = new THREE.Mesh(rollerGeo, mats.iron);
+  rollerR.rotation.x = Math.PI / 2;
+  rollerR.position.set(D.WIDTH / 2 - 0.2, conveyorY, 0);
+  rollerR.castShadow = true;
+  coopGroup.add(rollerR);
+  animatables.conveyorRollers.push(rollerR);
+
+  const belt = new THREE.Mesh(
+    new THREE.BoxGeometry(D.WIDTH - 0.4, 0.05, D.DEPTH - 0.22),
+    mats.conveyorBelt
+  );
+  belt.position.set(0, conveyorY, 0);
+  belt.receiveShadow = true;
+  belt.castShadow = true;
+  belt.name = 'GEO-conveyor_belt';
+  coopGroup.add(belt);
+  animatables.conveyorBelt = belt;
+
+  // Motor DC
+  const motor = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.3, 16), mats.motorGold);
+  motor.rotation.x = Math.PI / 2;
+  motor.position.set(-D.WIDTH / 2 + 0.2, conveyorY, D.DEPTH / 2 - 0.1);
+  motor.castShadow = true;
+  coopGroup.add(motor);
+  animatables.motor = motor;
+
+  // L298N
+  const l298n = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.1, 0.2), mats.l298n);
+  l298n.position.set(-D.WIDTH / 2 + 0.2, conveyorY - 0.15, D.DEPTH / 2 - 0.1);
+  l298n.castShadow = true;
+  coopGroup.add(l298n);
+
+  // Arduino Uno
+  const arduino = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.02, 0.1), mats.arduinoPanel);
+  arduino.position.set(-D.WIDTH / 2 + 0.2, conveyorY - 0.28, D.DEPTH / 2 - 0.1);
+  arduino.castShadow = true;
+  coopGroup.add(arduino);
+
+  // 3. RANGKA KAYU
+  const postGeo = new THREE.BoxGeometry(0.08, D.WALL_H, 0.08);
+  xPositions.forEach(x => zPositions.forEach(z => {
+    const post = new THREE.Mesh(postGeo, mats.wood);
+    post.position.set(x, D.PILLAR_H + D.WALL_H / 2, z);
+    post.castShadow = true;
+    coopGroup.add(post);
+  }));
+
+  const hBeamLong = new THREE.BoxGeometry(D.WIDTH, 0.08, 0.08);
+  const hBeamWide = new THREE.BoxGeometry(0.08, 0.08, D.DEPTH);
+  [D.PILLAR_H, D.PILLAR_H + D.WALL_H].forEach(y => {
+    zPositions.forEach(z => {
+      const b = new THREE.Mesh(hBeamLong, mats.wood);
+      b.position.set(0, y, z);
+      b.castShadow = true;
+      coopGroup.add(b);
+    });
+    xPositions.forEach(x => {
+      const b = new THREE.Mesh(hBeamWide, mats.wood);
+      b.position.set(x, y, 0);
+      b.castShadow = true;
+      coopGroup.add(b);
+    });
+  });
+
+  // 4. LANTAI KAWAT
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(D.WIDTH, D.DEPTH), mats.wireMesh);
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.set(0, D.PILLAR_H + 0.04, 0);
+  floor.receiveShadow = true;
+  coopGroup.add(floor);
+
+  // 5. DINDING KAWAT
+  const frontWallGeo = new THREE.PlaneGeometry(D.WIDTH, D.WALL_H);
+  const sideWallGeo = new THREE.PlaneGeometry(D.DEPTH, D.WALL_H);
+
+  const wFront = new THREE.Mesh(frontWallGeo, mats.wireMesh);
+  wFront.position.set(0, D.PILLAR_H + D.WALL_H / 2, D.DEPTH / 2);
+  coopGroup.add(wFront);
+
+  const wBack = new THREE.Mesh(frontWallGeo, mats.wireMesh);
+  wBack.position.set(0, D.PILLAR_H + D.WALL_H / 2, -D.DEPTH / 2);
+  wBack.rotation.y = Math.PI;
+  coopGroup.add(wBack);
+
+  const wLeft = new THREE.Mesh(sideWallGeo, mats.wireMesh);
+  wLeft.position.set(-D.WIDTH / 2, D.PILLAR_H + D.WALL_H / 2, 0);
+  wLeft.rotation.y = -Math.PI / 2;
+  coopGroup.add(wLeft);
+
+  // 6. DINDING KANAN + JENDELA SAMPING
+  const rwGroup = new THREE.Group();
+  rwGroup.position.set(D.WIDTH / 2, D.PILLAR_H + D.WALL_H / 2, 0);
+  rwGroup.rotation.y = Math.PI / 2;
+
+  const rwTop = new THREE.Mesh(new THREE.PlaneGeometry(D.DEPTH, (D.WALL_H - 1) / 2), mats.wireMesh);
+  rwTop.position.y = D.WALL_H / 2 - (D.WALL_H - 1) / 4;
+  rwGroup.add(rwTop);
+
+  const rwBot = new THREE.Mesh(new THREE.PlaneGeometry(D.DEPTH, (D.WALL_H - 1) / 2), mats.wireMesh);
+  rwBot.position.y = -D.WALL_H / 2 + (D.WALL_H - 1) / 4;
+  rwGroup.add(rwBot);
+
+  // Jendela samping
+  const sideWindow = new THREE.Group();
+  sideWindow.name = 'GEO-side_win';
+
+  const sWinMesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mats.wireMesh);
+  const sWinFrame = new THREE.Mesh(new THREE.BoxGeometry(1.05, 1.05, 0.04), mats.iron);
+  sWinMesh.position.x = 0.5;
+  sWinFrame.position.x = 0.5;
+  sideWindow.add(sWinMesh);
+  sideWindow.add(sWinFrame);
+
+  const servoGeo = new THREE.BoxGeometry(0.04, 0.05, 0.03);
+  const servo1 = new THREE.Mesh(servoGeo, mats.servo);
+  servo1.position.set(0, 0.5, -0.05);
+  sideWindow.add(servo1);
+
+  sideWindow.position.set(-D.DEPTH / 2 + 0.5, 0, 0);
+  rwGroup.add(sideWindow);
+  coopGroup.add(rwGroup);
+  animatables.sideWindow = sideWindow;
+
+  // 7. ATAP PELANA
+  const roofAngle = Math.atan2(D.ROOF_H, (D.DEPTH + 0.6) / 2);
+  const roofSlopeLen = Math.hypot((D.DEPTH + 0.6) / 2, D.ROOF_H);
+  const roofGeo = new THREE.PlaneGeometry(D.WIDTH + 0.6, roofSlopeLen);
+
+  const roofFront = new THREE.Mesh(roofGeo, mats.corrugated);
+  roofFront.rotation.x = -roofAngle;
+  roofFront.position.set(0, D.PILLAR_H + D.WALL_H + D.ROOF_H / 2, (D.DEPTH + 0.6) / 4);
+  roofFront.castShadow = true;
+  roofFront.receiveShadow = true;
+  coopGroup.add(roofFront);
+
+  const roofBack = new THREE.Mesh(roofGeo, mats.corrugated);
+  roofBack.rotation.x = roofAngle;
+  roofBack.rotation.y = Math.PI;
+  roofBack.position.set(0, D.PILLAR_H + D.WALL_H + D.ROOF_H / 2, -(D.DEPTH + 0.6) / 4);
+  roofBack.castShadow = true;
+  roofBack.receiveShadow = true;
+  coopGroup.add(roofBack);
+
+  // 8. JENDELA ATAP (2 buah)
+  const winGeo = new THREE.BoxGeometry(0.8, 0.8, 0.02);
+  const winFrameGeo = new THREE.BoxGeometry(0.84, 0.84, 0.04);
+
+  [-2, 2].forEach((x, idx) => {
+    const rWin = new THREE.Group();
+    rWin.name = `GEO-roof_win${idx + 1}`;
+
+    const glass = new THREE.Mesh(winGeo, mats.acrylic);
+    const frame = new THREE.Mesh(winFrameGeo, mats.iron);
+    glass.position.y = -0.4;
+    frame.position.y = -0.4;
+    rWin.add(glass);
+    rWin.add(frame);
+
+    const servo = new THREE.Mesh(servoGeo, mats.servo);
+    servo.position.set(0.3, 0, -0.05);
+    rWin.add(servo);
+
+    rWin.position.set(x, D.PILLAR_H + D.WALL_H + D.ROOF_H - 0.1, (D.DEPTH + 0.6) / 8);
+    rWin.rotation.x = -roofAngle;
+
+    animatables.roofWindows.push({
+      mesh: rWin,
+      baseAngle: -roofAngle,
+    });
+    coopGroup.add(rWin);
+  });
+
+  // 9. PINTU & PANEL KONTROL
+  const door = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.5, 0.04), mats.iron);
+  door.position.set(D.WIDTH / 4, D.PILLAR_H + 0.75, D.DEPTH / 2 + 0.02);
+  door.castShadow = true;
+  coopGroup.add(door);
+
+  const panel = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.5, 0.15), mats.esp32Panel);
+  panel.position.set(D.WIDTH / 4 + 0.8, D.PILLAR_H + 1.2, D.DEPTH / 2 + 0.08);
+  panel.castShadow = true;
+  coopGroup.add(panel);
+
+  const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.25, 8), mats.iron);
+  ant.position.set(D.WIDTH / 4 + 0.9, D.PILLAR_H + 1.55, D.DEPTH / 2 + 0.08);
+  coopGroup.add(ant);
+
+  const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.5, 8), mats.concrete);
+  pipe.position.set(D.WIDTH / 4 + 0.8, D.PILLAR_H + 0.4, D.DEPTH / 2 + 0.08);
+  coopGroup.add(pipe);
+
+  // 10. SENSOR
+  const dht = new THREE.Mesh(
+    new THREE.BoxGeometry(0.05, 0.08, 0.03),
+    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 })
+  );
+  dht.position.set(D.WIDTH / 2 - 0.1, D.PILLAR_H + 1.5, 0.2);
+  coopGroup.add(dht);
+
+  const mq = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.05, 12), mats.iron);
+  mq.rotation.x = Math.PI / 2;
+  mq.position.set(D.WIDTH / 2 - 0.1, D.PILLAR_H + 1.5, -0.2);
+  coopGroup.add(mq);
+
+  // 11. FEEDER & DRINKER
+  const feederGeo = new THREE.CylinderGeometry(0.12, 0.15, 0.3, 16);
+  for (let i = -2.5; i <= 2.5; i += 1.25) {
+    const isFeeder = Math.round(i * 100) % 250 === 0;
+    const f = new THREE.Mesh(feederGeo, isFeeder ? mats.feederYellow : mats.drinkerRed);
+    f.position.set(i, D.PILLAR_H + 0.15, 0);
+    f.castShadow = true;
+    coopGroup.add(f);
+  }
+
+  // 12. LAMPU INTERIOR
+  for (let i = -2; i <= 2; i += 4) {
+    const light = new THREE.PointLight(0xfff5ea, 0, 7);
+    light.position.set(i, D.PILLAR_H + D.WALL_H - 0.2, 0);
+
+    const bulbMat = new THREE.MeshBasicMaterial({ color: 0x333333 });
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 12), bulbMat);
+    light.add(bulb);
+
+    animatables.interiorLights.push({ light, bulbMat });
+    coopGroup.add(light);
+  }
+
+  scene.add(coopGroup);
+}
+
+/* ============================================================
+   BUILD CHICKENS
+   ============================================================ */
+
+function buildChickens(count = 12) {
+  const mats = createMaterials();
+
+  for (let i = 0; i < count; i++) {
+    const chicken = new THREE.Group();
+    chicken.name = `chicken_${i}`;
+
+    const bodyGeo = new THREE.SphereGeometry(0.15, 16, 16);
+    bodyGeo.scale(1, 0.8, 1.3);
+    const body = new THREE.Mesh(bodyGeo, mats.chickenBody);
+    body.position.y = 0.15;
+    body.castShadow = true;
+    chicken.add(body);
+
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.08, 12, 12), mats.chickenBody);
+    head.position.set(0, 0.28, 0.15);
+    head.castShadow = true;
+    chicken.add(head);
+
+    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.08, 8), mats.chickenBeak);
+    beak.rotation.x = Math.PI / 2;
+    beak.position.set(0, 0.28, 0.22);
+    chicken.add(beak);
+
+    const comb = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), mats.chickenComb);
+    comb.position.set(0, 0.36, 0.15);
+    chicken.add(comb);
+
+    const px = (Math.random() - 0.5) * (D.WIDTH - 0.8);
+    const pz = (Math.random() - 0.5) * (D.DEPTH - 0.8);
+    chicken.position.set(px, D.PILLAR_H + 0.04, pz);
+    chicken.rotation.y = Math.random() * Math.PI * 2;
+
+    chicken.userData = {
+      phase: Math.random() * Math.PI * 2,
+      peckSpeed: 2 + Math.random() * 1.5,
+      head,
+      beak,
+    };
+
+    animatables.chickens.push(chicken);
+    coopGroup.add(chicken);
+  }
+}
+
+/* ============================================================
+   ANIMATION LOOP
+   ============================================================ */
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  const delta = Math.min(clock.getDelta(), 0.1);
+  const time = clock.getElapsedTime();
+
+  controls.update();
+
+  // 1. Jendela atap
+  const targetRoof = state.roofOpen ? -Math.PI / 4 : 0;
+  animatables.roofWindows.forEach(win => {
+    const target = win.baseAngle + targetRoof;
+    win.mesh.rotation.x += (target - win.mesh.rotation.x) * 6 * delta;
+  });
+
+  // 2. Jendela samping
+  if (animatables.sideWindow) {
+    const targetSide = state.sideOpen ? Math.PI / 2 : 0;
+    animatables.sideWindow.rotation.y +=
+      (targetSide - animatables.sideWindow.rotation.y) * 6 * delta;
+  }
+
+  // 3. Conveyor
+  const targetSpeed = state.conveyor ? 0.6 : 0;
+  if (animatables.conveyorBelt && animatables.conveyorBelt.material.map) {
+    if (state.conveyor) {
+      animatables.conveyorBelt.material.map.offset.x -= 0.6 * delta;
+    }
+  }
+  animatables.conveyorRollers.forEach(r => {
+    if (state.conveyor) r.rotation.y += 3 * delta;
+  });
+
+  // 4. Motor vibration
+  if (animatables.motor && state.conveyor) {
+    animatables.motor.rotation.z = Math.sin(Date.now() * 0.05) * 0.01;
+  }
+
+  // 5. Chickens
+  animatables.chickens.forEach(chicken => {
+    const { phase, peckSpeed, head, beak } = chicken.userData;
+    chicken.rotation.z = Math.sin(time * 2 + phase) * 0.04;
+
+    const peck = Math.sin(time * peckSpeed + phase);
+    if (peck > 0.7) {
+      head.rotation.x = THREE.MathUtils.lerp(head.rotation.x, Math.PI / 3, 0.12);
+      beak.rotation.x = THREE.MathUtils.lerp(beak.rotation.x, Math.PI / 3 + Math.PI / 2, 0.12);
+    } else {
+      head.rotation.x = THREE.MathUtils.lerp(head.rotation.x, 0, 0.08);
+      beak.rotation.x = THREE.MathUtils.lerp(beak.rotation.x, Math.PI / 2, 0.08);
+    }
+  });
+
+  renderer.render(scene, camera);
+}
+
+/* ============================================================
+   RESIZE
+   ============================================================ */
+
+function onResize() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+}
+
+/* ============================================================
+   CAMERA VIEWS
+   ============================================================ */
+
+function setCameraView(view) {
+  switch (view) {
+    case 'human':
+      camera.position.set(6, 1.8, 6);
+      controls.target.set(0, 1.5, 0);
+      break;
+    case 'bird':
+      camera.position.set(0, 12, 6);
+      controls.target.set(0, 0, 0);
+      break;
+    case 'conveyor':
+      camera.position.set(5, 0.6, 3);
+      controls.target.set(2.5, 0.3, 0);
+      break;
+    case 'windows':
+      camera.position.set(-3, 5, 5);
+      controls.target.set(0, 3.5, 0);
+      break;
+  }
+  controls.update();
+}
+
+/* ============================================================
+   UI BINDING
+   ============================================================ */
+
+function bindUI() {
+  // Control buttons
+  document.getElementById('btn-roof').addEventListener('click', (e) => {
+    state.roofOpen = !state.roofOpen;
+    e.currentTarget.classList.toggle('active', state.roofOpen);
+    showToast(`Servo Atap: ${state.roofOpen ? 'BUKA (45°)' : 'TUTUP'}`);
+  });
+
+  document.getElementById('btn-side').addEventListener('click', (e) => {
+    state.sideOpen = !state.sideOpen;
+    e.currentTarget.classList.toggle('active', state.sideOpen);
+    showToast(`Servo Samping: ${state.sideOpen ? 'BUKA (90°)' : 'TUTUP'}`);
+  });
+
+  document.getElementById('btn-conveyor').addEventListener('click', (e) => {
+    state.conveyor = !state.conveyor;
+    e.currentTarget.classList.toggle('active', state.conveyor);
+    showToast(`Motor DC: ${state.conveyor ? 'RUNNING' : 'STOP'}`);
+  });
+
+  document.getElementById('btn-lights').addEventListener('click', (e) => {
+    state.lights = !state.lights;
+    e.currentTarget.classList.toggle('active', state.lights);
+    animatables.interiorLights.forEach(l => {
+      l.light.intensity = state.lights ? 1.5 : 0;
+      l.bulbMat.color.setHex(state.lights ? 0xffffff : 0x333333);
+    });
+    showToast(`Relay Lampu: ${state.lights ? 'ON' : 'OFF'}`);
+  });
+
+  // Camera buttons
+  document.querySelectorAll('.cam-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.cam-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      setCameraView(btn.dataset.view);
+      showToast(`Kamera: ${btn.title}`);
+    });
+  });
+}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+
+let toastTimer;
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  const toastMsg = document.getElementById('toast-msg');
+  toastMsg.textContent = msg;
+  toast.classList.add('show');
+
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+/* ============================================================
+   SENSOR SIMULATION
+   ============================================================ */
+
+function startSensorSimulation() {
+  setInterval(() => {
+    // Suhu: naik pelan, fluktuasi
+    state.sensor.temp += (Math.random() - 0.48) * 0.3;
+    state.sensor.temp = Math.max(25, Math.min(35, state.sensor.temp));
+
+    // Kelembapan: berbanding terbalik dengan suhu
+    state.sensor.humid = 100 - (state.sensor.temp - 25) * 3 + (Math.random() - 0.5) * 3;
+    state.sensor.humid = Math.max(50, Math.min(85, state.sensor.humid));
+
+    // Gas: naik saat conveyor OFF, turun saat ON
+    if (state.conveyor) {
+      state.sensor.gas -= 0.8;
+    } else {
+      state.sensor.gas += 0.15;
+    }
+    state.sensor.gas = Math.max(5, Math.min(45, state.sensor.gas));
+
+    // Feed: turun pelan
+    if (Math.random() > 0.7) {
+      state.sensor.feed = Math.max(20, state.sensor.feed - 1);
+    }
+
+    // Update UI
+    document.getElementById('temp-val').textContent = state.sensor.temp.toFixed(1) + '°C';
+    document.getElementById('humid-val').textContent = Math.round(state.sensor.humid) + '%';
+    document.getElementById('gas-val').textContent = Math.round(state.sensor.gas) + 'ppm';
+    document.getElementById('feed-val').textContent = Math.round(state.sensor.feed) + '%';
+  }, 2000);
+}
+
+/* ============================================================
+   START
+   ============================================================ */
+
+window.addEventListener('load', init);
+</script>
+</body>
+</html>

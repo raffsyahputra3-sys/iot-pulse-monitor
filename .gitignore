@@ -3,3 +3,12 @@ node_modules/
 dist/
 build/
 *.log
+.env
+backend/.env
+backend/.demo-db.json
+logs/
+*.tar
+*.exe
+_backup-hapus/
+mosquitto/
+.opencode/

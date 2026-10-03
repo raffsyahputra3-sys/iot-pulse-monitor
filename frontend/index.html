@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IoT Monitoring Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+  <header>
+    <h1>IoT Monitoring</h1>
+    <div id="status" class="status offline">Offline</div>
+  </header>
+
+  <main>
+    <section class="cards">
+      <div class="card">
+        <h3>Suhu</h3>
+        <p id="suhu">--</p>
+        <span>C</span>
+      </div>
+      <div class="card">
+        <h3>Kelembapan</h3>
+        <p id="kelembapan">--</p>
+        <span>%</span>
+      </div>
+      <div class="card">
+        <h3>Device</h3>
+        <p id="deviceId">--</p>
+      </div>
+      <div class="card alert-card">
+        <h3>Alert</h3>
+        <p id="alertCount">0</p>
+      </div>
+    </section>
+
+    <section class="chart-section">
+      <h2>Grafik Real-time</h2>
+      <canvas id="chart"></canvas>
+    </section>
+
+    <section class="table-section">
+      <h2>Data Terbaru</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Waktu</th>
+            <th>Device</th>
+            <th>Suhu</th>
+            <th>Kelembapan</th>
+          </tr>
+        </thead>
+        <tbody id="dataTable"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <div id="toast"></div>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

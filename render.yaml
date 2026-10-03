@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: iot-backend
+    runtime: node
+    region: singapore
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: MQTT_BROKER
+        value: mqtt://broker.emqx.io:1883
+      - key: MQTT_TOPIC
+        value: iot/device/+/data
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: "*"
