@@ -19,7 +19,7 @@ class OnePager(FPDF):
         self.set_y(-14)
         self.set_font("Helvetica", "", 8)
         self.set_text_color(107, 114, 128)
-        self.cell(0, 5, "[NAMA]  |  Pendidikan Fisika, [KAMPUS]  |  [HP]  |  [EMAIL KAMPUS]  |  " + REPO, align="C")
+        self.cell(0, 5, "Rafi Praja Syahputra  |  Pendidikan Fisika, UNS  |  rafipraja@student.uns.ac.id  |  " + REPO, align="C")
 
     def section(self, title):
         self.set_font("Helvetica", "B", 11)
