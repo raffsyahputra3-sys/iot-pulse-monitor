@@ -669,12 +669,12 @@ async connect(){
 }
 async disconnect(){this.socket&&this.socket.disconnect();this.simInterval&&clearInterval(this.simInterval)}
 _onData(data){
-  // Backend payload: { deviceId, suhu, kelembapan, timestamp }
+  // Backend payload: { deviceId, suhu, kelembapan, gas, pakan/pakanPersen, atap, mode, timestamp }
   this.sensor.temp=data.suhu!=null?+data.suhu.toFixed(1):null;
   this.sensor.humid=data.kelembapan!=null?+data.kelembapan.toFixed(0):null;
-  // gas & feed belum tersedia di backend — tetap null sampai ESP32 kirim
-  this.sensor.gas=null;
-  this.sensor.feed=null;
+  this.sensor.gas=data.gas!=null?+data.gas:null;
+  this.sensor.feed=data.pakanPersen!=null?+data.pakanPersen:(data.pakan!=null?(+data.pakan?100:15):null);
+  if(data.atap!=null){state.device.roofAngle=+data.atap;state.device.sideAngle=+data.atap;state.device.roofWindow=+data.atap>5;state.device.sideWindow=+data.atap>5}
   state.connection.status='connected';
   this.connected=true;
   this._stopSim();
@@ -705,10 +705,19 @@ _startSim(){
 }
 _stopSim(){if(this.simInterval){clearInterval(this.simInterval);this.simInterval=null}}
 // V7: Granular control — sendCommand supports boolean (toggle) & numeric (slider)
+// Perintah atap juga diteruskan ke ESP32 via backend Socket.IO -> MQTT (iot/device/<id>/cmd)
 async sendCommand(id,v){
   state.device[id]=v;
   if(id==='roofAngle'||id==='sideAngle'){const boolKey=id==='roofAngle'?'roofWindow':'sideWindow';state.device[boolKey]=v>5}
   if(id==='conveyorRpm'){state.device.conveyor=v>0}
+  try{
+    if(this.socket&&this.connected){
+      let actuator=null,value=v;
+      if(id==='roofWindow'||id==='sideWindow'){actuator='atap';value=v?90:0}
+      else if(id==='roofAngle'||id==='sideAngle'){actuator='atap';value=Math.round(+v)}
+      if(actuator)this.socket.emit('command',{actuator,value,deviceId:'esp32-rakit-01'});
+    }
+  }catch(e){}
   notify();
 }
 }

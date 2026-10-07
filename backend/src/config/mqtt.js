@@ -40,6 +40,13 @@ function initMQTT(io) {
         deviceId: payload.deviceId,
         suhu: payload.suhu,
         kelembapan: payload.kelembapan,
+        // Field tambahan (hanya disimpan jika ESP32 mengirimnya)
+        ...(payload.gas != null ? { gas: Number(payload.gas) } : {}),
+        ...(payload.gasRaw != null ? { gasRaw: Number(payload.gasRaw) } : {}),
+        ...(payload.pakan != null ? { pakan: Number(payload.pakan) } : {}),
+        ...(payload.pakanPersen != null ? { pakanPersen: Number(payload.pakanPersen) } : {}),
+        ...(payload.atap != null ? { atap: Number(payload.atap) } : {}),
+        ...(payload.mode != null ? { mode: String(payload.mode) } : {}),
         timestamp: payload.timestamp ? new Date(payload.timestamp * 1000) : new Date()
       };
 

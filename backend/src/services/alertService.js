@@ -5,12 +5,13 @@ function thresholds() {
     tempMax: parseFloat(process.env.ALERT_TEMP_MAX) || 35,
     tempMin: parseFloat(process.env.ALERT_TEMP_MIN) || 15,
     humMax: parseFloat(process.env.ALERT_HUMIDITY_MAX) || 85,
-    humMin: parseFloat(process.env.ALERT_HUMIDITY_MIN) || 30
+    humMin: parseFloat(process.env.ALERT_HUMIDITY_MIN) || 30,
+    gasMax: parseFloat(process.env.ALERT_GAS_MAX) || 25
   };
 }
 
 function evaluateAlerts(data) {
-  const { tempMax, tempMin, humMax, humMin } = thresholds();
+  const { tempMax, tempMin, humMax, humMin, gasMax } = thresholds();
   const out = [];
   if (data.suhu != null) {
     if (data.suhu > tempMax) out.push({ tipe: 'suhu', nilai: data.suhu, pesan: `Suhu tinggi: ${Number(data.suhu).toFixed(1)}C (device ${data.deviceId})`, level: 'danger' });
@@ -19,6 +20,12 @@ function evaluateAlerts(data) {
   if (data.kelembapan != null) {
     if (data.kelembapan > humMax) out.push({ tipe: 'kelembapan', nilai: data.kelembapan, pesan: `Kelembapan tinggi: ${Number(data.kelembapan).toFixed(0)}% (device ${data.deviceId})`, level: 'warning' });
     else if (data.kelembapan < humMin) out.push({ tipe: 'kelembapan', nilai: data.kelembapan, pesan: `Kelembapan rendah: ${Number(data.kelembapan).toFixed(0)}% (device ${data.deviceId})`, level: 'warning' });
+  }
+  if (data.gas != null && data.gas > gasMax) {
+    out.push({ tipe: 'gas', nilai: data.gas, pesan: `Gas tinggi: ${Number(data.gas).toFixed(1)} ppm (device ${data.deviceId})`, level: 'danger' });
+  }
+  if (data.pakan != null && Number(data.pakan) === 0) {
+    out.push({ tipe: 'pakan', nilai: 0, pesan: `Pakan habis (device ${data.deviceId}) — segera isi ulang`, level: 'warning' });
   }
   return out;
 }

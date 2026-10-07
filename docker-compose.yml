@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:6
+    container_name: iot-mongodb
+    restart: unless-stopped
+    ports:
+      # bind localhost saja: DB tidak boleh terekspos ke internet (khususnya di VPS)
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: iotdb
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: iot-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - mosquitto-data:/mosquitto/data
+
+  backend:
+    build: ./backend
+    container_name: iot-backend
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    depends_on:
+      - mongodb
+      - mosquitto
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/iotdb
+      - MQTT_BROKER=mqtt://mosquitto:1883
+    env_file:
+      - ./backend/.env
+
+volumes:
+  mongodb-data:
+  mosquitto-data:
