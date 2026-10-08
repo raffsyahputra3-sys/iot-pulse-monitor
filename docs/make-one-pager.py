@@ -79,7 +79,7 @@ pdf.placeholder_box("GRAFIK: tempel 1 grafik 3 hari (suhu / kelembapan / gas) di
 pdf.set_font("Helvetica", "", 8.5)
 pdf.set_text_color(31, 41, 55)
 pdf.cell(0, 5, "GitHub: " + REPO, new_x="LMARGIN", new_y="NEXT")
-pdf.cell(0, 5, "Video demo: https://www.instagram.com/reel/DeCfE8qSaa0/", new_x="LMARGIN", new_y="NEXT")
+pdf.cell(0, 5, "Video demo: https://youtube.com/shorts/Qf5C-NR5o1w", new_x="LMARGIN", new_y="NEXT")
 pdf.ln(2)
 
 pdf.section("3. Rencana kolaborasi (yang ditawarkan)")
