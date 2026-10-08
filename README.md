@@ -54,3 +54,6 @@ docs/       # dokumentasi lengkap
 
 ## Kontak kolaborasi
 Terbuka untuk bimbingan/kolaborasi riset IoT + edge ML (corresponding author dipersilakan). Hubungi via email GitHub profile.
+
+## Lisensi
+MIT © 2026 Rafi Praja Syahputra — lihat `LICENSE`.
