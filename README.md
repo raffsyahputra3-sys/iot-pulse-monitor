@@ -5,9 +5,12 @@ Sistem monitoring + kontrol kandang ayam end-to-end: ESP32 → MQTT → Backend 
 Mahasiswa Pendidikan Fisika — fokus fisika terapan: termodinamika mikroklimat kandang, kalibrasi sensor, dan kontrol ventilasi hemat energi. Roadmap: edge ML lokal (prediksi + deteksi anomali THI).
 
 ## Demo
-- Video prototype 60 detik: *(isi link YouTube unlisted di sini)*
+- Video web + dashboard: https://www.instagram.com/reel/DeCfE8qSaa0/
 - Dashboard live: `https://iot-pulse-monitor.vercel.app` (frontend) + `https://iot-backend.onrender.com/api` (cek `"demoMode": false`)
 - Lokal: `http://localhost:4000`
+
+## Prototype
+![Prototype kandang + wiring ESP32](docs/images/prototype-01.jpg)
 
 ## Arsitektur
 ```

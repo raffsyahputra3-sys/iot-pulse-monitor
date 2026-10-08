@@ -69,12 +69,17 @@ pdf.bullets([
     "Target riset: fisika terapan (mikroklimat, kalibrasi sensor, efisiensi ventilasi) - bukan veteriner.",
 ])
 
-pdf.section("2. Bukti (ganti 2 kotak ini sebelum kirim)")
-pdf.placeholder_box("FOTO: tempel 1 foto prototype kandang + wiring ESP32 di sini", h=30)
-pdf.placeholder_box("GRAFIK: tempel 1 grafik 3 hari (suhu / kelembapan / gas) di sini", h=30)
+pdf.section("2. Bukti")
 pdf.set_font("Helvetica", "", 9.5)
 pdf.set_text_color(31, 41, 55)
-pdf.cell(0, 5, "GitHub: " + REPO + "   |   Video 60 detik: [LINK YOUTUBE UNLISTED]", new_x="LMARGIN", new_y="NEXT")
+pdf.cell(0, 5, "Prototype kandang + wiring ESP32 (dokumentasi sendiri, Okt 2026):", new_x="LMARGIN", new_y="NEXT")
+pdf.image(r"C:\Users\ASUS TUF\Documents\iot-web-monitoring\docs\images\prototype-01.jpg", x=10, w=190, h=42)
+pdf.set_y(pdf.get_y() + 44)
+pdf.placeholder_box("GRAFIK: tempel 1 grafik 3 hari (suhu / kelembapan / gas) di sini", h=22)
+pdf.set_font("Helvetica", "", 8.5)
+pdf.set_text_color(31, 41, 55)
+pdf.cell(0, 5, "GitHub: " + REPO, new_x="LMARGIN", new_y="NEXT")
+pdf.cell(0, 5, "Video demo: https://www.instagram.com/reel/DeCfE8qSaa0/", new_x="LMARGIN", new_y="NEXT")
 pdf.ln(2)
 
 pdf.section("3. Rencana kolaborasi (yang ditawarkan)")
