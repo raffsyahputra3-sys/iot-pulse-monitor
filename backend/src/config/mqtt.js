@@ -9,6 +9,8 @@ let client;
 function initMQTT(io) {
   const broker = process.env.MQTT_BROKER || 'mqtt://localhost:1883';
   const topic = process.env.MQTT_TOPIC || 'iot/device/+/data';
+  // Kanal keputusan AI dari service Pi (PRD AI-Atap §5.5): iot/device/+/ai
+  const aiTopic = 'iot/device/+/ai';
 
   const options = {
     username: process.env.MQTT_USERNAME || undefined,
@@ -29,9 +31,23 @@ function initMQTT(io) {
       if (err) logger.error('MQTT subscribe error:', err);
       else logger.info(`MQTT subscribed: ${topic}`);
     });
+    client.subscribe(aiTopic, (err) => {
+      if (err) logger.error('MQTT subscribe error:', err);
+      else logger.info(`MQTT subscribed: ${aiTopic}`);
+    });
   });
 
   client.on('message', async (topic, message) => {
+    // Keputusan AI dari Pi → teruskan ke dashboard via Socket.IO, tanpa DB.
+    if (topic.endsWith('/ai')) {
+      try {
+        const ai = JSON.parse(message.toString());
+        io.emit('aiKeputusan', ai);
+      } catch (err) {
+        logger.warn('AI message parse error: ' + err.message);
+      }
+      return;
+    }
     try {
       const payload = JSON.parse(message.toString());
       logger.info(`MQTT message: ${topic}`, payload);

@@ -1,0 +1,15 @@
+[Unit]
+Description=AI advisor atap kandang ayam (offline)
+After=network.target mosquitto.service ollama.service
+Wants=mosquitto.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/kandang/pi
+ExecStart=/opt/kandang/venv/bin/python mqtt_listener.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

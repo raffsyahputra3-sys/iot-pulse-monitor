@@ -30,6 +30,11 @@ ESP32 (DHT22 + MQ-135 + IR pakan + 2x servo atap)
 ## Hardware (prototype jadi)
 - ESP32 DevKit + DHT22 + MQ-135 + IR FC-51 + 2x MG90S — lihat `firmware/esp32-kandang-lengkap/` (wiring di README firmware, tinggal colok, tanpa PCB custom)
 
+## AI Lokal (Advisor Atap, Offline) — PRD terpisah
+LLM kecil (`qwen2.5:1.5b-instruct`, ~1,54 miliar parameter, Ollama, Q4_K_M) jalan 100% offline di Raspberry Pi 4/5 tanpa GPU untuk mengusulkan sudut atap optimal; keputusan akhir tetap di guard rules (bukan LLM) demi keamanan. Beban model: **~1 GB di disk, ~2 GB RAM** — muat nyaman di Pi 4 (4GB).
+
+Fine-tuning (LoRA, adapter di-merge ke base) **tidak mengecilkan beban** — jumlah parameter, ukuran file, dan RAM tetap identik ke base. Yang naik adalah **kualitas keputusan** (diukur dari seberapa jarang guard terpaksa meng-override usulan AI, lihat §9 T6 di PRD), bukan efisiensi resource. Detail lengkap: `docs/PRD-AI-Kontrol-Atap-Offline-V1.md`.
+
 ## Quick Start (lokal)
 ```powershell
 .\scripts\setup.ps1

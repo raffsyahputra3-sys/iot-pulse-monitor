@@ -9,6 +9,8 @@ backend/.demo-db.json
 logs/
 *.tar
 *.exe
+__pycache__/
+*.pyc
 _backup-hapus/
 mosquitto/
 .opencode/

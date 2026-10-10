@@ -659,6 +659,7 @@ async connect(){
     socket.on('connect_error',()=>{this.connected=false;state.connection.status='error';this._setMode('offline');notify()});
     socket.on('dataBaru',data=>this._onData(data));
     socket.on('deviceStatus',d=>{_logStatus('Device '+d.deviceId+' '+d.status)});
+    socket.on('aiKeputusan',d=>{state.ai=d;_logStatus('AI atap '+d.angle+'° ['+d.source+'] '+d.reason);_addNotif('AI: atap '+d.angle+'° — '+d.reason,d.source==='ai'?'info':'warn')});
     // Fallback: jika broker tidak reachable setelah 5 detik, pakai simulasi
     setTimeout(()=>{if(!this.connected){this._setMode('sim');this._startSim();_logStatus('Fallback: simulation mode (broker unreachable)')}},5000);
   }catch(e){

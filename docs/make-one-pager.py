@@ -87,6 +87,8 @@ pdf.bullets([
     "Logging 2-4 minggu di kandang asli (interval 5 dtk) -> training di laptop -> export ONNX/TFLite.",
     "Inference pindah ke single-board computer di kandang (offline-first); laptop kini sebagai edge sementara.",
     "Fokus: (a) prediksi suhu/amonia, (b) deteksi anomali + THI heat-stress, (c) kontrol ventilasi prediktif hemat energi.",
+    "Sudah ada PRD advisor atap berbasis LLM lokal (Ollama, qwen2.5 1.5B, Q4) 100% offline di Raspberry Pi tanpa GPU "
+    "- beban hanya ~1 GB disk / ~2 GB RAM, muat di Pi 4 4GB; keputusan akhir tetap di guard rules demi keamanan.",
     "Skema: saya penulis pertama, Bapak/Ibu corresponding author; dana alat & data saya siapkan; mohon 15 menit diskusi.",
 ])
 
